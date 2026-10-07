@@ -163,11 +163,15 @@ test('the page and health check are served, other paths are not', async t => {
   assert.equal((await fetch(srv.url + '/nope.js')).status, 404);
 });
 
-test('the hook token survives a restart so installed hooks keep working', async t => {
-  const { srv, dir } = await boot(t);
+test('the hook token and the sessions survive a restart', async t => {
+  const { srv, dir, hook } = await boot(t);
+  await hook({ hook_event_name: 'UserPromptSubmit' });
+  const token = srv.hookUrl.split('/').pop();
+  await srv.stop();
   const again = createServer({ port: 0, configDir: dir, settingsFile: path.join(dir, 'x.json') });
   await again.start();
   t.after(() => again.stop());
-  assert.equal(again.hookUrl.split('/').pop(), srv.hookUrl.split('/').pop());
+  assert.equal(again.hookUrl.split('/').pop(), token);
   assert.notEqual(again.uiKey, srv.uiKey);
+  assert.deepEqual(again.office.snapshot().map(s => [s.name, s.state]), [['blog-api', 'waiting']]);
 });

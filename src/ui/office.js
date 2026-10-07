@@ -151,13 +151,14 @@ window.PixelOffice = function (canvas) {
   }
   const headTop = (s, T, t) => {
     const typing = s.state === 'working' || s.state === 'subagent';
+    if (s.state === 'sleeping') return T - 15 + (Math.sin(t * 1.2 + s.seed) > 0.6 ? 1 : 0);   // head down on the desk, breathing
     return T - 21 + (typing && ((t * 1.3 + s.seed) % 3 < 0.25) ? 1 : 0) + (s.state === 'waiting' ? -1 : 0);
   };
   function seated(s, d, t) {
     const { cx, T } = d, k = kindOf(s), c = colOf(s), st = s.state, hc = c.hand || c.fur;
     const typing = st === 'working' || st === 'subagent';
     const hy = headTop(s, T, t), by = T - 9;
-    const blink = ((t + s.seed * 1.7) % 3.4) < 0.12;
+    const blink = st === 'sleeping' || ((t + s.seed * 1.7) % 3.4) < 0.12;
     if (k === 'cat') { const sw = Math.round(Math.sin(t * 2 + s.seed)); R(cx - 11, T - 6, 2, 6, c.fur); R(cx - 12 - sw, T - 10, 2, 5, c.fur); R(cx - 13 - sw, T - 12, 2, 3, c.dark); }
     if (k === 'dog') { const wag = (st === 'approval' || st === 'waiting') ? Math.round(Math.sin(t * 10)) : 0; R(cx - 10, T - 5, 2, 5, c.fur); R(cx - 12 + wag, T - 8, 3, 4, c.fur); }
     R(cx - 5, by, 10, 10, s.shirt); R(cx - 3, by, 6, 1, 'rgba(0,0,0,.2)');
@@ -187,6 +188,7 @@ window.PixelOffice = function (canvas) {
     const { cx, T } = d, st = s.state, c = colOf(s), hc = c.hand || c.fur;
     deco(d, s.desk);
     if (s.mode !== 'seated') { R(cx - 7, T + 1, 14, 2, LID2); R(cx - 7, T + 3, 14, 1, LIDSH); return; }
+    if (st === 'sleeping') { R(cx - 7, T + 3, 14, 2, LID2); R(cx - 7, T + 5, 14, 1, LIDSH); R(cx - 11, T + 1, 3, 2, hc); R(cx + 8, T + 1, 3, 2, hc); return; }
     const on = st !== 'waiting';
     R(cx - 5, T - 6, 10, 9, LID); R(cx - 4, T - 5, 8, 7, LID2); R(cx - 1, T - 3, 2, 2, st === 'error' ? '#E03131' : on ? '#BFE9FF' : LIDSH); R(cx - 6, T + 3, 12, 1, LIDSH);
     if (st === 'working' || st === 'subagent') {
@@ -224,6 +226,11 @@ window.PixelOffice = function (canvas) {
     R(x - 8, fy - 13 + f, 3, 7, s.shirt); R(x + 5, fy - 13 + f, 3, 7, s.shirt);
     R(x - 8, fy - 6 + f, 3, 2, hc); R(x + 5, fy - 6 + f, 3, 2, hc);
     head(k, c, x, fy - 26 + f, { blink: false });
+  }
+  // A pixel "z" for a sleeping session.
+  function zzz(x, y, n) {
+    R(x, y, n, 1, '#FFFFFF'); R(x, y + n - 1, n, 1, '#FFFFFF');
+    for (let k = 1; k < n - 1; k++) R(x + n - 1 - k, y + k, 1, 1, '#FFFFFF');
   }
   // A small red "x" bubble for a session whose turn ended with an API error.
   function errorBubble(x, y) {
@@ -269,7 +276,7 @@ window.PixelOffice = function (canvas) {
     for (const s of visuals) {
       if (s.mode !== 'seated' || !desks[s.desk]) continue;
       const { cx, T } = desks[s.desk], st = s.state;
-      if (night && st !== 'waiting') { R(cx - 8, T - 21, 16, 2, 'rgba(150,205,255,.07)'); R(cx - 10, T - 19, 20, 19, 'rgba(150,205,255,.07)'); R(cx - 7, T - 16, 14, 13, 'rgba(170,215,255,.10)'); R(cx - 1, T - 3, 2, 2, st === 'error' ? '#FF8A80' : '#DFF4FF'); }
+      if (night && st !== 'waiting' && st !== 'sleeping') { R(cx - 8, T - 21, 16, 2, 'rgba(150,205,255,.07)'); R(cx - 10, T - 19, 20, 19, 'rgba(150,205,255,.07)'); R(cx - 7, T - 16, 14, 13, 'rgba(170,215,255,.10)'); R(cx - 1, T - 3, 2, 2, st === 'error' ? '#FF8A80' : '#DFF4FF'); }
       if (st === 'working' || st === 'subagent') {
         const cs = ['#7FDBCA', '#FFD166', '#F78FB3'];
         for (let i = 0; i < 3; i++) {
@@ -280,6 +287,14 @@ window.PixelOffice = function (canvas) {
         ctx.globalAlpha = 1;
       }
       if (st === 'error') errorBubble(cx - 17, T - 37);
+      if (st === 'sleeping') {
+        for (let i = 0; i < 3; i++) {
+          const ph = (t * 0.3 + s.seed * 0.21 + i / 3) % 1;
+          ctx.globalAlpha = 1 - ph * 0.85;
+          zzz(cx + 8 + ph * 10, T - 16 - ph * 18, ph < 0.35 ? 4 : ph < 0.7 ? 5 : 6);
+        }
+        ctx.globalAlpha = 1;
+      }
     }
   }
   // Which desk (index) is at this point of the canvas, in canvas pixels; -1 when none.

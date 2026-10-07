@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { Office, describe, baseName, STALE_MS } = require('../src/sessions');
+const { Office, describe, baseName, STALE_MS, SLEEP_MS } = require('../src/sessions');
 
 const ev = (name, extra = {}) => ({ session_id: 's1', cwd: 'C:\\Projects\\blog-api', hook_event_name: name, ...extra });
 const only = office => office.snapshot()[0];
@@ -123,4 +123,33 @@ test('describe and baseName handle both path styles', () => {
   assert.equal(describe({ command: 'a'.repeat(100) }, true).length, 48);
   assert.equal(describe({}, true), '');
   assert.equal(describe({ todos: [1] }, true), '{"todos":[1]}');
+});
+
+test('a waiting session dozes off after a quiet while and wakes on the next prompt', () => {
+  let now = 1000;
+  const o = new Office({ now: () => now });
+  o.handle(ev('Stop'));
+  assert.equal(only(o).state, 'waiting');
+  now += SLEEP_MS + 1;
+  assert.equal(only(o).state, 'sleeping');
+  o.handle(ev('UserPromptSubmit'));
+  assert.equal(only(o).state, 'working');
+  now += SLEEP_MS + 1;
+  assert.equal(only(o).state, 'working', 'a long-running turn is not asleep');
+});
+
+test('sessions survive a restart as waiting, without stale ones or old requests', () => {
+  let now = STALE_MS * 2;
+  const a = new Office({ now: () => now });
+  a.handle(ev('UserPromptSubmit', { session_title: 'auth refactor' }));
+  a.handle(ev('PermissionRequest', { tool_name: 'Bash', tool_input: { command: 'ls' } }), { canDecide: true });
+  a.handle({ ...ev('Stop'), session_id: 'old' });
+  a.sessions.get('old').lastAt = now - STALE_MS - 1;
+  const b = new Office({ now: () => now });
+  b.restore(JSON.parse(JSON.stringify(a.export())));
+  b.restore([null, { id: 5 }, 'x']);
+  assert.equal(b.snapshot().length, 1);
+  assert.equal(only(b).name, 'auth refactor');
+  assert.equal(only(b).state, 'waiting');
+  assert.deepEqual(only(b).pending, []);
 });

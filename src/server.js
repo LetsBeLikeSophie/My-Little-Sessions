@@ -41,6 +41,7 @@ function createServer(options = {}) {
   const port = options.port ?? DEFAULT_PORT;
   const configDir = options.configDir;
   const configFile = path.join(configDir, 'config.json');
+  const sessionsFile = path.join(configDir, 'sessions.json');
   const uiDir = options.uiDir || path.join(__dirname, 'ui');
   const settingsFile = options.settingsFile || hooksConfig.settingsPath();
   const platform = options.platform || process.platform;
@@ -53,6 +54,7 @@ function createServer(options = {}) {
   let boundPort = port;
   let timers = [];
   let queued = false;
+  let saveTimer = null;
 
   const saveConfig = () => { fs.mkdirSync(configDir, { recursive: true }); fs.writeFileSync(configFile, JSON.stringify(config, null, 2) + '\n'); };
 
@@ -84,6 +86,9 @@ function createServer(options = {}) {
     return true;
   }
 
+  // Remember who is in the office, so reopening the app shows the same sessions.
+  const saveSessions = () => { try { fs.writeFileSync(sessionsFile, JSON.stringify(office.export())); } catch (e) { /* not worth failing over */ } };
+  office.on('change', () => { clearTimeout(saveTimer); saveTimer = setTimeout(saveSessions, 500); });
   office.on('change', broadcast);
   office.on('release', id => reply(id, ''));
 
@@ -199,6 +204,7 @@ function createServer(options = {}) {
   function start() {
     config = loadConfig(configFile);
     saveConfig();
+    try { office.restore(JSON.parse(fs.readFileSync(sessionsFile, 'utf8'))); } catch (e) { /* nothing saved yet */ }
     return new Promise((resolve, reject) => {
       server = http.createServer(onRequest);
       server.once('error', reject);
@@ -216,6 +222,8 @@ function createServer(options = {}) {
 
   function stop() {
     timers.forEach(clearInterval);
+    clearTimeout(saveTimer);
+    if (config) saveSessions();
     for (const id of [...held.keys()]) reply(id, '');
     for (const res of streams) res.end();
     streams.clear();

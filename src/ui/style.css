@@ -5,7 +5,7 @@
 :root {
   --bg: #E4EAEE; --surface: #F4F7F9; --ink: #1B2731; --muted: #566773; --line: #BFCBD3;
   --accent: #17806A; --frame: #1B2731; --drop: #AEBBC4; --plate-text: #FFF1D6;
-  --st-work: #2F9E7A; --st-sub: #7A5CC7; --st-ask: #F0A202; --st-wait: #5E87A8; --st-in: #D9662B; --st-err: #D6336C; --on-ask: #1E1A10;
+  --st-work: #2F9E7A; --st-sub: #7A5CC7; --st-ask: #F0A202; --st-wait: #5E87A8; --st-in: #D9662B; --st-err: #D6336C; --st-off: #9AA7AF; --on-ask: #1E1A10;
   --f-body: 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', system-ui, sans-serif;
   --f-pixel: 'Pixelify Sans', 'Malgun Gothic', 'Apple SD Gothic Neo', ui-monospace, monospace;
   color-scheme: light;
@@ -14,7 +14,7 @@
   :root {
     --bg: #121920; --surface: #1A242D; --ink: #E3EBF0; --muted: #93A5B1; --line: #2B3945;
     --accent: #49C4A2; --frame: #05080B; --drop: #070B0F; --plate-text: #E6DAC2;
-    --st-work: #46C39A; --st-sub: #A48BEB; --st-ask: #F5B83A; --st-wait: #7FA9CC; --st-in: #F08A4B; --st-err: #F06595; --on-ask: #1E1A10;
+    --st-work: #46C39A; --st-sub: #A48BEB; --st-ask: #F5B83A; --st-wait: #7FA9CC; --st-in: #F08A4B; --st-err: #F06595; --st-off: #6B7A85; --on-ask: #1E1A10;
     color-scheme: dark;
   }
 }
@@ -85,6 +85,8 @@ ul { list-style: none; margin: 0; padding: 0; }
 .row[data-st="subagent"] .pill i { background: var(--st-sub); }
 .row[data-st="arriving"] .pill i, .row[data-st="leaving"] .pill i { background: var(--st-in); }
 .row[data-st="error"] .pill i { background: var(--st-err); }
+.row[data-st="sleeping"] .pill i { background: var(--st-off); }
+.row[data-st="sleeping"] .nm { color: var(--muted); }
 .row[data-st="approval"] .pill { background: var(--st-ask); color: var(--on-ask); }
 .row[data-st="approval"] .pill i { background: var(--on-ask); }
 .acts { grid-area: acts; display: flex; gap: 6px; align-items: center; }

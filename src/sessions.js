@@ -3,6 +3,7 @@
 const { EventEmitter } = require('events');
 
 const STALE_MS = 12 * 60 * 60 * 1000;
+const SLEEP_MS = 5 * 60 * 1000;   // a waiting session with no activity for this long dozes off
 const KNOWN = new Set([
   'SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'PostToolUseFailure',
   'PermissionRequest', 'PermissionDenied', 'Notification', 'SubagentStart', 'SubagentStop',
@@ -173,15 +174,30 @@ class Office extends EventEmitter {
     for (const s of [...this.sessions.values()]) if (s.lastAt < cutoff) this.dismiss(s.id);
   }
 
+  // What is worth remembering across a restart of the app: who was here, not what they were doing.
+  export() {
+    return [...this.sessions.values()].map(s => ({ id: s.id, title: s.title, cwd: s.cwd, ev: s.ev, startedAt: s.startedAt, lastAt: s.lastAt }));
+  }
+
+  restore(list) {
+    const cutoff = this.now() - STALE_MS;
+    for (const r of Array.isArray(list) ? list : []) {
+      if (!r || typeof r.id !== 'string' || !r.id || !(r.lastAt > cutoff) || this.sessions.has(r.id)) continue;
+      const title = typeof r.title === 'string' ? r.title : '', cwd = typeof r.cwd === 'string' ? r.cwd : '';
+      this.sessions.set(r.id, { id: r.id, name: title || baseName(cwd), title, cwd, base: 'waiting', ev: typeof r.ev === 'string' ? r.ev : '', subagents: 0, pending: [], error: '', startedAt: Number(r.startedAt) || r.lastAt, lastAt: r.lastAt });
+    }
+  }
+
   snapshot() {
     return [...this.sessions.values()]
       .sort((a, b) => a.startedAt - b.startedAt)
       .map(s => ({
         id: s.id, name: s.name, cwd: s.cwd, ev: s.ev, error: s.error,
-        state: s.pending.length ? 'approval' : s.error ? 'error' : s.subagents > 0 ? 'subagent' : s.base,
+        state: s.pending.length ? 'approval' : s.error ? 'error' : s.subagents > 0 ? 'subagent'
+          : s.base === 'waiting' && this.now() - s.lastAt > SLEEP_MS ? 'sleeping' : s.base,
         pending: s.pending.map(p => ({ id: p.id, tool: p.tool, text: p.text, canDecide: p.canDecide }))
       }));
   }
 }
 
-module.exports = { Office, baseName, describe, STALE_MS };
+module.exports = { Office, baseName, describe, STALE_MS, SLEEP_MS };

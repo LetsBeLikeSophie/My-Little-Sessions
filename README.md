@@ -25,12 +25,14 @@ Windows may show a "Windows protected your PC" notice because the app is not cod
 | Types, with bits of code floating up | Claude is working on your prompt or running a tool |
 | A chick intern appears on the desk | A subagent is running |
 | Raises a hand, with a speech bubble | Claude needs your permission |
-| Sips coffee | Claude finished and is waiting for you |
+| Sips coffee | Claude just finished and is waiting for you |
+| Sleeps on the desk, with floating z's | Nothing has happened for 5 minutes |
 | Slumps with a red ✕ | The turn ended with an API error |
 | Walks out | The session ended |
 
 A few more things the office does on its own:
 
+- **The office always matches your sessions.** Characters arrive, change and leave on their own, and reopening the app brings back whoever was there.
 - **Desks are added as you need them.** Three more appear whenever every desk is taken.
 - **The wall clock and the sky outside follow your real time**, so the office goes through day, sunset and night with you.
 - **Characters can be people, cats, dogs, bears, rabbits, or a mix.** A session keeps the same look for as long as it lives.
@@ -55,7 +57,7 @@ My Little Sessions uses [hooks](https://code.claude.com/docs/en/hooks), the exte
 
 Two things to know:
 
-- A session whose terminal was closed abruptly cannot say goodbye. Clear its desk with the **×** button; otherwise it leaves on its own after 12 hours of silence.
+- A session whose terminal was closed abruptly, or that ended while the app was closed, cannot say goodbye. It falls asleep at its desk. Clear the desk with the **×** button; otherwise it leaves on its own after 12 hours of silence.
 - Only sessions on this computer show up. Cloud sessions do not read your local settings file.
 
 ## Uninstall
