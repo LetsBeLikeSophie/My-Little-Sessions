@@ -3,7 +3,7 @@
 const { EventEmitter } = require('events');
 
 const STALE_MS = 12 * 60 * 60 * 1000;
-const SLEEP_MS = 5 * 60 * 1000;   // a waiting session with no activity for this long dozes off
+const SLEEP_MS = 5 * 60 * 1000;   // how long a waiting session stays up when its Remote Control state is unknown
 const KNOWN = new Set([
   'SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'PostToolUseFailure',
   'PermissionRequest', 'PermissionDenied', 'Notification', 'SubagentStart', 'SubagentStop',
@@ -200,6 +200,14 @@ class Office extends EventEmitter {
     }
   }
 
+  // A waiting session has coffee while its Remote Control is on, and sleeps while it is off: nobody
+  // can reach it from elsewhere. Until a hook has reported either, it dozes off after a quiet while.
+  asleep(s) {
+    if (s.base !== 'waiting') return false;
+    if (typeof s.remote === 'boolean') return !s.remote;
+    return this.now() - s.lastAt > SLEEP_MS;
+  }
+
   snapshot() {
     return [...this.sessions.values()]
       .sort((a, b) => a.startedAt - b.startedAt)
@@ -208,7 +216,7 @@ class Office extends EventEmitter {
         id: s.id, name: s.name, cwd: s.cwd, ev: s.ev, error: s.error, remote: s.remote,
         project: s.project, projectName: baseName(s.project), team: teamKey(s.project),
         state: s.pending.length ? 'approval' : s.error ? 'error' : s.subagents > 0 ? 'subagent'
-          : s.base === 'waiting' && this.now() - s.lastAt > SLEEP_MS ? 'sleeping' : s.base,
+          : this.asleep(s) ? 'sleeping' : s.base,
         pending: s.pending.map(p => ({ id: p.id, tool: p.tool, text: p.text, canDecide: p.canDecide }))
       }));
   }

@@ -26,8 +26,8 @@ Windows may show a "Windows protected your PC" notice because the app is not cod
 | A chick intern rides on its head | A subagent is running |
 | Raises a hand, with a speech bubble | Claude needs your permission |
 | Wears a headset | Remote Control is connected for that session |
-| Sips coffee | Claude just finished and is waiting for you |
-| Sleeps on the desk, with floating z's | Nothing has happened for 5 minutes |
+| Sips coffee | Waiting for you, with Remote Control on |
+| Sleeps on the desk, with floating z's | Waiting for you, with Remote Control off |
 | Slumps with a red ✕ | The turn ended with an API error |
 | Walks out | The session ended |
 
@@ -35,10 +35,11 @@ A few more things the office does on its own:
 
 - **The office always matches your sessions.** Characters arrive, change and leave on their own, and reopening the app brings back whoever was there.
 - **Sessions of the same project sit together.** They share one long desk with the project's name on it and wear the same colour. The desk grows when a teammate arrives and closes up when one leaves. Sessions in a worktree sit with their project.
-- **The empty chair with a + starts a new session.** Every team keeps one spare chair. Clicking it opens the Claude desktop app with a new session in that project, and the new teammate walks in and takes the seat.
+- **A desk's nameplate starts a new session.** Click the project name on a desk, or a character and then **New session here**, and the Claude desktop app opens a new session in that project. The new teammate walks in and the desk makes room.
 - **The wall clock and the sky outside follow your real time**, so the office goes through day, sunset and night with you.
 - **Characters can be people, cats, dogs, bears, rabbits, or a mix.** A session keeps the same look for as long as it lives.
 - **Clicking a character** shows which folder it is working in, with a button to clear its desk. If its Remote Control is off, there is also a button that copies `/remote-control` so you can paste it into that session.
+- **Coffee or sleep depends on Remote Control.** A waiting session you can still reach from elsewhere stays up with a coffee; one you cannot is asleep. Right after the app starts, before a session has reported in, it has coffee for 5 minutes and then dozes off.
 - **The headset follows the session's last activity.** If Remote Control drops while a session sits idle, the headset comes off the next time that session does something.
 
 ## Approving from the office
