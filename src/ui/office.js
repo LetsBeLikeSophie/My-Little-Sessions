@@ -148,6 +148,12 @@ window.PixelOffice = function (canvas) {
     const ey = hy + 5 + (o.down ? 1 : 0);
     if (o.blink) { R(cx - 4, ey + 1, 2, 1, eye); R(cx + 2, ey + 1, 2, 1, eye); }
     else { R(cx - 4, ey, 2, 2, eye); R(cx + 2, ey, 2, 2, eye); }
+    if (o.headset) {   // Remote Control is connected
+      const band = '#1FB89A', cup = '#2B2F38';
+      R(x + 2, hy - 1, 10, 1, band); R(x + 1, hy, 1, 1, band); R(x + 12, hy, 1, 1, band); R(x, hy + 1, 1, 2, band); R(x + 13, hy + 1, 1, 2, band);
+      R(x - 1, hy + 3, 2, 5, cup); R(x + 13, hy + 3, 2, 5, cup); R(x - 1, hy + 4, 1, 3, band); R(x + 14, hy + 4, 1, 3, band);
+      R(x, hy + 8, 1, 2, cup); R(x + 1, hy + 9, 3, 1, cup); R(x + 4, hy + 9, 1, 1, band);
+    }
   }
   const headTop = (s, T, t) => {
     const typing = s.state === 'working' || s.state === 'subagent';
@@ -164,7 +170,7 @@ window.PixelOffice = function (canvas) {
     R(cx - 5, by, 10, 10, s.shirt); R(cx - 3, by, 6, 1, 'rgba(0,0,0,.2)');
     R(cx - 8, by + 2, 3, 8, s.shirt);
     if (st !== 'approval') R(cx + 5, by + 2, 3, 8, s.shirt);
-    head(k, c, cx, hy, { blink, down: typing || st === 'error', tongue: st === 'waiting' });
+    head(k, c, cx, hy, { blink, down: typing || st === 'error', tongue: st === 'waiting', headset: s.remote === true });
     if (st === 'approval') {
       const wv = Math.round(Math.sin(t * 9));
       R(cx + 5, by + 1, 4, 3, s.shirt); R(cx + 7, hy + 1, 3, by + 3 - (hy + 1), s.shirt); R(cx + 7 + wv, hy - 3, 3, 4, hc);
@@ -225,7 +231,7 @@ window.PixelOffice = function (canvas) {
     R(x - 5, fy - 14 + f, 10, 10, s.shirt);
     R(x - 8, fy - 13 + f, 3, 7, s.shirt); R(x + 5, fy - 13 + f, 3, 7, s.shirt);
     R(x - 8, fy - 6 + f, 3, 2, hc); R(x + 5, fy - 6 + f, 3, 2, hc);
-    head(k, c, x, fy - 26 + f, { blink: false });
+    head(k, c, x, fy - 26 + f, { blink: false, headset: s.remote === true });
   }
   // A pixel "z" for a sleeping session.
   function zzz(x, y, n) {

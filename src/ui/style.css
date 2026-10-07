@@ -70,6 +70,7 @@ button.link { border: 0; background: none; padding: 0; color: var(--muted); text
 .ask-btns button.pass { flex: 1 0 100%; padding: 0; border: 0; background: none; text-align: left; text-decoration: underline; color: var(--muted); font-size: clamp(10px, 1.3cqw, 12px); }
 .card-name { font: 600 1rem/1.2 var(--f-pixel); overflow-wrap: anywhere; }
 .card-path { font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
+.card-rc { font-size: .85rem; }
 .card-btns button { flex: 1 1 auto; font-size: .88rem; }
 @container (max-width: 560px) { .ask { padding: 4px; gap: 4px; } .ask:not(.open) .ask-btns, .ask:not(.open) .ask-note { display: none; } }
 
@@ -79,7 +80,9 @@ ul { list-style: none; margin: 0; padding: 0; }
 .row { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto auto; grid-template-areas: "sw nm pill acts" ". ev ev acts"; column-gap: 10px; row-gap: 2px; align-items: center; padding: 8px 12px; border: 2px solid var(--line); background: var(--surface); }
 .row[data-st="approval"] { border-color: var(--st-ask); }
 .sw { grid-area: sw; width: 14px; height: 14px; }
-.nm { grid-area: nm; font: 600 1.05rem/1.2 var(--f-pixel); overflow-wrap: anywhere; }
+.nm { grid-area: nm; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; font: 600 1.05rem/1.2 var(--f-pixel); overflow-wrap: anywhere; }
+.rc { padding: 0 6px; border: 1px solid var(--line); color: var(--muted); font: 400 .72rem/1.5 var(--f-body); white-space: nowrap; }
+.rc[data-on="true"] { border-color: var(--accent); color: var(--accent); }
 .ev { grid-area: ev; font: 400 .82rem/1.3 var(--f-pixel); color: var(--muted); overflow-wrap: anywhere; }
 .pill { grid-area: pill; display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; font-size: .88rem; line-height: 1.5; white-space: nowrap; }
 .pill i { width: 9px; height: 9px; flex: none; background: var(--st-wait); }

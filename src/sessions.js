@@ -62,10 +62,11 @@ class Office extends EventEmitter {
 
     let s = this.sessions.get(id);
     if (!s) {
-      s = { id, name: '', title: '', cwd: '', base: 'waiting', ev: '', subagents: 0, pending: [], error: '', startedAt: this.now(), lastAt: 0 };
+      s = { id, name: '', title: '', cwd: '', base: 'waiting', ev: '', subagents: 0, pending: [], error: '', remote: null, startedAt: this.now(), lastAt: 0 };
       this.sessions.set(id, s);
     }
     s.lastAt = this.now();
+    if (typeof options.remote === 'boolean') s.remote = options.remote;   // is Remote Control connected right now
     if (!s.cwd && typeof evt.cwd === 'string') s.cwd = evt.cwd;
     if (typeof evt.session_title === 'string' && evt.session_title) s.title = evt.session_title;
     s.name = s.title || baseName(s.cwd);
@@ -184,7 +185,7 @@ class Office extends EventEmitter {
     for (const r of Array.isArray(list) ? list : []) {
       if (!r || typeof r.id !== 'string' || !r.id || !(r.lastAt > cutoff) || this.sessions.has(r.id)) continue;
       const title = typeof r.title === 'string' ? r.title : '', cwd = typeof r.cwd === 'string' ? r.cwd : '';
-      this.sessions.set(r.id, { id: r.id, name: title || baseName(cwd), title, cwd, base: 'waiting', ev: typeof r.ev === 'string' ? r.ev : '', subagents: 0, pending: [], error: '', startedAt: Number(r.startedAt) || r.lastAt, lastAt: r.lastAt });
+      this.sessions.set(r.id, { id: r.id, name: title || baseName(cwd), title, cwd, base: 'waiting', ev: typeof r.ev === 'string' ? r.ev : '', subagents: 0, pending: [], error: '', remote: null, startedAt: Number(r.startedAt) || r.lastAt, lastAt: r.lastAt });
     }
   }
 
@@ -192,7 +193,7 @@ class Office extends EventEmitter {
     return [...this.sessions.values()]
       .sort((a, b) => a.startedAt - b.startedAt)
       .map(s => ({
-        id: s.id, name: s.name, cwd: s.cwd, ev: s.ev, error: s.error,
+        id: s.id, name: s.name, cwd: s.cwd, ev: s.ev, error: s.error, remote: s.remote,
         state: s.pending.length ? 'approval' : s.error ? 'error' : s.subagents > 0 ? 'subagent'
           : s.base === 'waiting' && this.now() - s.lastAt > SLEEP_MS ? 'sleeping' : s.base,
         pending: s.pending.map(p => ({ id: p.id, tool: p.tool, text: p.text, canDecide: p.canDecide }))

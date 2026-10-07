@@ -25,6 +25,7 @@ Windows may show a "Windows protected your PC" notice because the app is not cod
 | Types, with bits of code floating up | Claude is working on your prompt or running a tool |
 | A chick intern appears on the desk | A subagent is running |
 | Raises a hand, with a speech bubble | Claude needs your permission |
+| Wears a headset | Remote Control is connected for that session |
 | Sips coffee | Claude just finished and is waiting for you |
 | Sleeps on the desk, with floating z's | Nothing has happened for 5 minutes |
 | Slumps with a red ✕ | The turn ended with an API error |
@@ -36,7 +37,8 @@ A few more things the office does on its own:
 - **Desks are added as you need them.** Three more appear whenever every desk is taken.
 - **The wall clock and the sky outside follow your real time**, so the office goes through day, sunset and night with you.
 - **Characters can be people, cats, dogs, bears, rabbits, or a mix.** A session keeps the same look for as long as it lives.
-- **Clicking a character** shows which project folder it belongs to, with a button to clear its desk.
+- **Clicking a character** shows which project folder it belongs to, with a button to clear its desk. If its Remote Control is off, there is also a button that copies `/remote-control` so you can paste it into that session.
+- **The headset follows the session's last activity.** If Remote Control drops while a session sits idle, the headset comes off the next time that session does something.
 
 ## Approving from the office
 

@@ -104,11 +104,14 @@ function createServer(options = {}) {
   const send = (res, code, body, type) => { res.writeHead(code, type ? { 'Content-Type': type } : {}); res.end(body || ''); };
   const json = (res, code, obj) => send(res, code, JSON.stringify(obj), 'application/json');
 
-  async function onHook(req, res, token) {
+  async function onHook(req, res, token, url) {
     if (!safeEqual(token, config.hookToken)) return send(res, 404);
     let evt;
     try { evt = JSON.parse(await readBody(req)); } catch (e) { return send(res, 200); }
-    const pending = office.handle(evt, { canDecide: config.approvals });
+    // "rc" is the Remote Control id when connected; empty or an unexpanded %NAME% means it is off.
+    const rc = url.searchParams.get('rc');
+    const remote = rc === null ? undefined : rc !== '' && !rc.includes('%');
+    const pending = office.handle(evt, { canDecide: config.approvals, remote });
     // Anything written back is read by Claude Code, so stay silent unless this is a decision.
     if (!pending || !pending.canDecide) return send(res, 200);
     const timer = setTimeout(() => { if (reply(pending.id, '')) office.settle(pending.id, null); }, HOLD_MS);
@@ -188,7 +191,7 @@ function createServer(options = {}) {
     if (host !== `127.0.0.1:${boundPort}` && host !== `localhost:${boundPort}`) return send(res, 403);
     const url = new URL(req.url, `http://127.0.0.1:${boundPort}`);
     const done = p => Promise.resolve(p).catch(() => { if (!res.headersSent) send(res, 500); });
-    if (req.method === 'POST' && url.pathname.startsWith(hooksConfig.MARK)) return done(onHook(req, res, url.pathname.slice(hooksConfig.MARK.length)));
+    if (req.method === 'POST' && url.pathname.startsWith(hooksConfig.MARK)) return done(onHook(req, res, url.pathname.slice(hooksConfig.MARK.length), url));
     if (url.pathname.startsWith('/api/')) return done(onApi(req, res, url));
     if (url.pathname === '/health') return json(res, 200, { app: 'my-little-sessions', version: options.version || '0.0.0' });
     if (req.method === 'GET') return onStatic(req, res, url);

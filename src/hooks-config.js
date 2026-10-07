@@ -26,10 +26,15 @@ function hookUrl(port, token) {
 
 // The short connect timeout matters when the app is closed: the server is on this machine, so a
 // connection either opens at once or never will, and Windows otherwise retries for about 2 seconds.
+//
+// Claude Code sets CLAUDE_CODE_BRIDGE_SESSION_ID for hooks while the session's Remote Control is
+// connected. Passing it along as "rc" lets the office show who is reachable remotely. When the
+// variable is not set, sh sends an empty value and cmd.exe sends the %NAME% text unchanged.
+const RC_VAR = 'CLAUDE_CODE_BRIDGE_SESSION_ID';
 function hookCommand(url, maxSeconds, platform = process.platform) {
-  const curl = `-s --connect-timeout 0.3 -m ${maxSeconds} -X POST --data-binary @- ${url}`;
-  if (platform === 'win32') return { command: 'cmd.exe', args: ['/d', '/s', '/c', `curl.exe ${curl} & exit /b 0`] };
-  return { command: 'sh', args: ['-c', `curl ${curl}; exit 0`] };
+  const curl = `-s --connect-timeout 0.3 -m ${maxSeconds} -X POST --data-binary @-`;
+  if (platform === 'win32') return { command: 'cmd.exe', args: ['/d', '/s', '/c', `curl.exe ${curl} ${url}?rc=%${RC_VAR}% & exit /b 0`] };
+  return { command: 'sh', args: ['-c', `curl ${curl} "${url}?rc=\${${RC_VAR}}"; exit 0`] };
 }
 
 function buildHooks(port, token, platform = process.platform) {
@@ -114,11 +119,12 @@ function uninstall(file) {
   if (JSON.stringify(before) !== JSON.stringify(after)) write(file, after);
 }
 
-// 'connected' when every hook points at this app, 'outdated' when some of ours exist but not all, else 'none'.
+// 'connected' when every hook is the current one for this app, 'outdated' when ours exist but are
+// incomplete or from an older version, else 'none'.
 function status(file, port, token) {
   let settings;
   try { settings = readSettings(file); } catch (e) { return { state: 'error', message: e.message }; }
-  const url = hookUrl(port, token);
+  const url = hookUrl(port, token) + '?rc=';
   const hooks = settings.hooks && typeof settings.hooks === 'object' ? settings.hooks : {};
   const text = JSON.stringify(hooks);
   if (!text.includes(MARK)) return { state: 'none' };
@@ -126,4 +132,4 @@ function status(file, port, token) {
   return { state: complete ? 'connected' : 'outdated' };
 }
 
-module.exports = { MARK, EVENTS, BACKUP_SUFFIX, hookUrl, hookCommand, buildHooks, settingsPath, install, uninstall, status, withoutOurs };
+module.exports = { MARK, EVENTS, RC_VAR, BACKUP_SUFFIX, hookUrl, hookCommand, buildHooks, settingsPath, install, uninstall, status, withoutOurs };

@@ -1,6 +1,6 @@
 {
   "name": "my-little-sessions",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A pixel-art office where every Claude Code session is a little employee. See what each one is doing and approve or deny permission requests from their desk.",
   "author": "Sophie (https://github.com/LetsBeLikeSophie)",
   "license": "MIT",

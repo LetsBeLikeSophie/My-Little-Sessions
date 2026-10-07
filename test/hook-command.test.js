@@ -10,9 +10,9 @@ const { spawn } = require('child_process');
 const { createServer } = require('../src/server');
 const { buildHooks, hookCommand } = require('../src/hooks-config');
 
-function run(handler, input) {
+function run(handler, input, env = process.env) {
   return new Promise((resolve, reject) => {
-    const child = spawn(handler.command, handler.args, { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+    const child = spawn(handler.command, handler.args, { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, env });
     let stdout = '', stderr = '';
     child.stdout.on('data', d => { stdout += d; });
     child.stderr.on('data', d => { stderr += d; });
@@ -55,6 +55,19 @@ test('a permission request waits for the click and prints the decision for Claud
   const out = await running;
   assert.equal(out.code, 0);
   assert.deepEqual(JSON.parse(out.stdout), { hookSpecificOutput: { hookEventName: 'PermissionRequest', decision: { behavior: 'allow' } } });
+});
+
+test('the command reports whether Remote Control is connected', async t => {
+  const srv = await boot(t);
+  const handler = buildHooks(srv.port, srv.hookUrl.split('/').pop()).Stop[0].hooks[0];
+  const evt = { session_id: 'abc', cwd: process.cwd(), hook_event_name: 'Stop' };
+  const off = { ...process.env }; delete off.CLAUDE_CODE_BRIDGE_SESSION_ID;
+  assert.equal((await run(handler, evt, off)).code, 0);
+  assert.equal(srv.office.snapshot()[0].remote, false);
+  assert.equal((await run(handler, evt, { ...off, CLAUDE_CODE_BRIDGE_SESSION_ID: 'session_01ABCdef' })).code, 0);
+  assert.equal(srv.office.snapshot()[0].remote, true);
+  assert.equal((await run(handler, evt, off)).code, 0);
+  assert.equal(srv.office.snapshot()[0].remote, false);
 });
 
 test('with the app closed the command exits 0 quickly and silently', async () => {

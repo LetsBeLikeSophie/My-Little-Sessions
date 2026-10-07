@@ -11,8 +11,10 @@
       working: 'Working', subagent: 'Intern at work', approval: 'Needs approval', waiting: 'Waiting for you', sleeping: 'Asleep', error: 'Error', arriving: 'Arriving', leaving: 'Leaving',
       allow: 'Approve', deny: 'Deny', pass: 'Answer in Claude', answerInClaude: 'Answer this one in Claude.', more: n => `+${n} more`,
       dismiss: 'Clear desk', needsYou: 'Needs your answer',
+      rcOn: 'Remote on', rcOff: 'Remote off', rcOnLong: 'Remote Control is connected.', rcOffLong: 'Remote Control is off for this session.',
+      copyRc: 'Copy /remote-control', copied: 'Copied. Paste it into that session and press Enter.', copyFail: 'Could not copy. Type /remote-control in that session.',
       connectNone: 'Not connected to Claude Code yet. Connecting adds hooks to your Claude Code settings file (the original is backed up first), and sessions show up here whenever they do something.',
-      connectOutdated: 'The connection details have changed. Connect again to keep sessions showing up.',
+      connectOutdated: 'The hooks in your Claude Code settings are from an older version or incomplete. Connect again to bring them up to date.',
       connectBtn: 'Connect to Claude Code', reconnectBtn: 'Connect again',
       connected: 'Connected to Claude Code', notConnected: 'Not connected', disconnect: 'Disconnect',
       connectWarn: 'Heads-up: connecting changes your Claude Code settings, and sessions with Remote Control turned on may drop that connection. If one does, run /remote-control in that session again, or turn it back on with the Remote Control icon at the top of the session.',
@@ -29,8 +31,10 @@
       working: '작업 중', subagent: '인턴 투입', approval: '승인 대기', waiting: '입력 대기', sleeping: '자는 중', error: '오류', arriving: '출근 중', leaving: '퇴근 중',
       allow: '승인', deny: '거절', pass: 'Claude에서 답하기', answerInClaude: '이 요청은 Claude에서 답해 주세요.', more: n => `외 ${n}건`,
       dismiss: '자리 치우기', needsYou: '확인이 필요해요',
+      rcOn: '원격 켜짐', rcOff: '원격 꺼짐', rcOnLong: '리모트 컨트롤이 연결돼 있어요.', rcOffLong: '이 세션은 리모트 컨트롤이 꺼져 있어요.',
+      copyRc: '/remote-control 복사', copied: '복사했어요. 그 세션에 붙여 넣고 Enter를 누르세요.', copyFail: '복사하지 못했어요. 그 세션에서 /remote-control을 직접 입력해 주세요.',
       connectNone: '아직 Claude Code와 연결되지 않았어요. 연결하면 Claude Code 설정 파일에 훅이 추가되고(원래 파일은 먼저 백업해요), 세션이 움직일 때마다 여기에 나타나요.',
-      connectOutdated: '연결 정보가 바뀌었어요. 세션이 계속 보이려면 다시 연결해 주세요.',
+      connectOutdated: 'Claude Code 설정에 있는 훅이 예전 버전이거나 일부만 있어요. 다시 연결하면 최신 상태로 맞춰져요.',
       connectBtn: 'Claude Code에 연결', reconnectBtn: '다시 연결',
       connected: 'Claude Code 연결됨', notConnected: '연결 안 됨', disconnect: '연결 해제',
       connectWarn: '미리 알려드려요. 연결하면 Claude Code 설정이 바뀌면서, 리모트 컨트롤을 켜 둔 세션의 원격 연결이 끊길 수 있어요. 끊기면 그 세션에서 /remote-control을 다시 실행하거나, 세션 위쪽의 리모트 컨트롤 아이콘을 눌러 다시 켜 주세요.',
@@ -53,6 +57,7 @@
   canvas.setAttribute('aria-label', T.canvas);
   emptyEl.textContent = T.empty;
   $('card-dismiss').textContent = T.dismiss;
+  $('card-copy').textContent = T.copyRc;
   $('disconnect').textContent = T.disconnect;
   $('connect-warn').textContent = T.connectWarn;
   $('notice-ok').textContent = T.ok;
@@ -139,7 +144,7 @@
 
     const li = document.createElement('li');
     li.className = 'row';
-    li.innerHTML = '<span class="sw"></span><span class="nm"></span><span class="pill"><i></i><span class="pilltxt"></span></span><span class="ev"></span>'
+    li.innerHTML = '<span class="sw"></span><span class="nm"><span class="nmtxt"></span><span class="rc" hidden></span></span><span class="pill"><i></i><span class="pilltxt"></span></span><span class="ev"></span>'
       + '<span class="acts"><button type="button" class="yes"></button><button type="button" class="no"></button><button type="button" class="x">×</button></span>';
     const r = sel => li.querySelector(sel);
     r('.sw').style.background = v.shirt;
@@ -159,7 +164,12 @@
     v.tag.textContent = s.name;
     v.tag.classList.toggle('off', v.mode !== 'seated');
     v.row.dataset.st = shown;
-    v.row.querySelector('.nm').textContent = s.name;
+    v.remote = s.remote;
+    v.row.querySelector('.nmtxt').textContent = s.name;
+    const chip = v.row.querySelector('.rc');
+    chip.hidden = typeof s.remote !== 'boolean';
+    chip.textContent = s.remote ? T.rcOn : T.rcOff; chip.dataset.on = String(s.remote === true);
+    if (cardFor === v) fillCard(v);
     v.row.querySelector('.nm').title = s.cwd;
     v.row.querySelector('.pilltxt').textContent = T[shown];
     v.row.querySelector('.ev').textContent = s.ev;
@@ -208,10 +218,26 @@
     if (p) await post('/api/decide', { pending: p.id, decision });
   }
   function closeCard() { cardFor = null; card.hidden = true; }
-  function openCard(v) {
-    cardFor = v;
+  function fillCard(v) {
+    const known = typeof v.session.remote === 'boolean';
     $('card-name').textContent = v.session.name;
     $('card-path').textContent = v.session.cwd;
+    $('card-rc').hidden = !known;
+    $('card-rc').textContent = v.session.remote ? T.rcOnLong : T.rcOffLong;
+    $('card-copy').hidden = v.session.remote !== false;
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* fall back below */ }
+    const area = document.createElement('textarea');
+    area.value = text; document.body.appendChild(area); area.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    area.remove();
+    return ok;
+  }
+  function openCard(v) {
+    cardFor = v;
+    fillCard(v);
     const d = office.desks[v.desk];
     card.style.left = Math.min(78, Math.max(22, d.cx / office.W * 100)) + '%';
     card.style.top = ((d.T - 26) / office.H * 100) + '%';
@@ -229,6 +255,7 @@
   });
   canvas.addEventListener('mousemove', e => { canvas.style.cursor = visualAt(e) ? 'pointer' : 'default'; });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCard(); });
+  $('card-copy').addEventListener('click', async () => { toast(await copyText('/remote-control') ? T.copied : T.copyFail); });
   $('card-dismiss').addEventListener('click', () => { if (cardFor) post('/api/dismiss', { session: cardFor.id }); closeCard(); });
 
   $('skin').addEventListener('change', e => post('/api/settings', { skin: e.target.value }));
@@ -268,7 +295,7 @@
       let v = visuals.get(s.id);
       if (!v) {
         const h = hash(s.id);
-        v = { id: s.id, session: s, desk: freeDesk(), kind: KINDS[h % 5], variant: (h >>> 4) % 12, shirt: SHIRTS[(h >>> 9) % 6], seed: (h % 997) / 100, state: s.state, mode: 'seated', px: 0, py: 0, path: null, pi: 0 };
+        v = { id: s.id, session: s, desk: freeDesk(), kind: KINDS[h % 5], variant: (h >>> 4) % 12, shirt: SHIRTS[(h >>> 9) % 6], seed: (h % 997) / 100, state: s.state, remote: s.remote, mode: 'seated', px: 0, py: 0, path: null, pi: 0 };
         visuals.set(s.id, v);
         mount(v);
         relayout();

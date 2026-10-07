@@ -21,7 +21,7 @@ test('install creates the file when there is none and reports connected', () => 
   assert.equal(pr.command, 'cmd.exe');
   assert.equal(pr.timeout, 600);
   assert.equal(pr.async, undefined);
-  assert.match(pr.args[3], /^curl\.exe -s --connect-timeout 0\.3 -m 595 -X POST --data-binary @- http:\/\/127\.0\.0\.1:47821\/mls-hook\/a{32} & exit \/b 0$/);
+  assert.match(pr.args[3], /^curl\.exe -s --connect-timeout 0\.3 -m 595 -X POST --data-binary @- http:\/\/127\.0\.0\.1:47821\/mls-hook\/a{32}\?rc=%CLAUDE_CODE_BRIDGE_SESSION_ID% & exit \/b 0$/);
   assert.equal(s.hooks.PreToolUse[0].hooks[0].async, true);
   assert.equal(s.hooks.SessionEnd[0].hooks[0].async, undefined);
 });
@@ -75,4 +75,16 @@ test('a settings file that is not valid JSON is never modified', () => {
   assert.throws(() => hooks.install(f, 47821, TOKEN, 'linux'), /left untouched/);
   assert.equal(fs.readFileSync(f, 'utf8'), '{ "model": "opus", // comment\n }');
   assert.equal(hooks.status(f, 47821, TOKEN).state, 'error');
+});
+
+test('hooks written by an older version report outdated', () => {
+  const f = tmpFile();
+  hooks.install(f, 47821, TOKEN, 'linux');
+  const old = fs.readFileSync(f, 'utf8').split('?rc=${CLAUDE_CODE_BRIDGE_SESSION_ID}').join('');
+  assert.notEqual(old, fs.readFileSync(f, 'utf8'));
+  fs.writeFileSync(f, old);
+  assert.equal(hooks.status(f, 47821, TOKEN).state, 'outdated');
+  hooks.install(f, 47821, TOKEN, 'linux');
+  assert.equal(hooks.status(f, 47821, TOKEN).state, 'connected');
+  assert.equal(read(f).hooks.Stop.length, 1);
 });

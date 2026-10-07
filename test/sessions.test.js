@@ -153,3 +153,18 @@ test('sessions survive a restart as waiting, without stale ones or old requests'
   assert.equal(only(b).state, 'waiting');
   assert.deepEqual(only(b).pending, []);
 });
+
+test('Remote Control is unknown until a hook reports it, then follows each report', () => {
+  const o = new Office();
+  o.handle(ev('SessionStart'));
+  assert.equal(only(o).remote, null);
+  o.handle(ev('UserPromptSubmit'), { remote: true });
+  assert.equal(only(o).remote, true);
+  o.handle(ev('Stop'));
+  assert.equal(only(o).remote, true, 'an event without a report keeps the last known value');
+  o.handle(ev('UserPromptSubmit'), { remote: false });
+  assert.equal(only(o).remote, false);
+  const again = new Office();
+  again.restore(JSON.parse(JSON.stringify(o.export())));
+  assert.equal(only(again).remote, null, 'not carried across a restart');
+});
