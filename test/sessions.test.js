@@ -186,15 +186,17 @@ test('sessions of one project share a team, including worktrees and Windows casi
   assert.notEqual(teamKey('/home/sophie/App'), teamKey('/home/sophie/app'), 'case matters outside Windows');
 });
 
-test('a waiting session has coffee with Remote Control on and sleeps with it off', () => {
-  let now = 1000;
-  const o = new Office({ now: () => now });
-  o.handle(ev('Stop'), { remote: true });
-  assert.equal(only(o).state, 'waiting');
-  now += SLEEP_MS * 10;
-  assert.equal(only(o).state, 'waiting', 'reachable sessions stay up however long they wait');
-  o.handle(ev('Stop'), { remote: false });
-  assert.equal(only(o).state, 'sleeping', 'asleep at once when Remote Control is off');
-  o.handle(ev('UserPromptSubmit'), { remote: false });
-  assert.equal(only(o).state, 'working', 'working sessions never sleep');
+test('coffee or sleep depends on how long a session has waited, never on Remote Control', () => {
+  for (const remote of [true, false]) {
+    let now = 1000;
+    const o = new Office({ now: () => now });
+    o.handle(ev('UserPromptSubmit'), { remote });
+    o.handle(ev('Stop'), { remote });
+    assert.equal(only(o).state, 'waiting', 'just finished: coffee');
+    now += SLEEP_MS + 1;
+    assert.equal(only(o).state, 'sleeping', 'left alone: asleep');
+    assert.equal(only(o).remote, remote, 'the headset is the only thing Remote Control changes');
+    o.handle(ev('UserPromptSubmit'), { remote });
+    assert.equal(only(o).state, 'working', 'wakes up for the next prompt');
+  }
 });

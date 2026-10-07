@@ -3,7 +3,7 @@
 const { EventEmitter } = require('events');
 
 const STALE_MS = 12 * 60 * 60 * 1000;
-const SLEEP_MS = 5 * 60 * 1000;   // how long a waiting session stays up when its Remote Control state is unknown
+const SLEEP_MS = 5 * 60 * 1000;   // a waiting session left alone this long falls asleep
 const KNOWN = new Set([
   'SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'PostToolUseFailure',
   'PermissionRequest', 'PermissionDenied', 'Notification', 'SubagentStart', 'SubagentStop',
@@ -200,12 +200,10 @@ class Office extends EventEmitter {
     }
   }
 
-  // A waiting session has coffee while its Remote Control is on, and sleeps while it is off: nobody
-  // can reach it from elsewhere. Until a hook has reported either, it dozes off after a quiet while.
+  // Posture says what the session is doing; the headset alone says whether Remote Control is on.
+  // A session that just finished has coffee ("your turn"), and one left alone for a while sleeps.
   asleep(s) {
-    if (s.base !== 'waiting') return false;
-    if (typeof s.remote === 'boolean') return !s.remote;
-    return this.now() - s.lastAt > SLEEP_MS;
+    return s.base === 'waiting' && this.now() - s.lastAt > SLEEP_MS;
   }
 
   snapshot() {

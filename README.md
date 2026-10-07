@@ -26,8 +26,8 @@ Windows may show a "Windows protected your PC" notice because the app is not cod
 | A chick intern rides on its head | A subagent is running |
 | Raises a hand, with a speech bubble | Claude needs your permission |
 | Wears a headset | Remote Control is connected for that session |
-| Sips coffee | Waiting for you, with Remote Control on |
-| Sleeps on the desk, with floating z's | Waiting for you, with Remote Control off |
+| Sips coffee | Claude just finished and it is your turn |
+| Sleeps on the desk, with floating z's | Nothing has happened for 5 minutes |
 | Slumps with a red ✕ | The turn ended with an API error |
 | Walks out | The session ended |
 
@@ -41,7 +41,7 @@ A few more things the office does on its own:
 - **The wall clock and the sky outside follow your real time**, so the office goes through day, sunset and night with you.
 - **Characters can be people, cats, dogs, bears, rabbits, or a mix.** A session keeps the same look for as long as it lives.
 - **Click a character** to see its name and what it is doing, with two small icons: a headset that shows whether Remote Control is on, and a door that clears its desk. A crossed-out headset is a button that copies `/remote-control`, ready to paste into that session.
-- **Coffee or sleep depends on Remote Control.** A waiting session you can still reach from elsewhere stays up with a coffee; one you cannot is asleep. Right after the app starts, before a session has reported in, it has coffee for 5 minutes and then dozes off.
+- **Posture and headset mean different things.** What a character is doing shows the session's activity; the headset alone shows whether its Remote Control is on, whatever it is doing.
 - **The headset follows the session's last activity.** If Remote Control drops while a session sits idle, the headset comes off the next time that session does something.
 
 ## Approving from the office
