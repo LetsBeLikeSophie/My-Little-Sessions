@@ -75,7 +75,7 @@ npm test         # 테스트 실행
 npm run dist     # dist/ 폴더에 윈도우 설치 파일과 무설치 exe 빌드
 ```
 
-릴리스는 GitHub Actions가 윈도우에서 빌드해요. `v0.1.0` 같은 태그를 올리면 두 파일을 빌드해서 릴리스에 첨부해요.
+릴리스는 GitHub Actions가 윈도우에서 빌드해요. `v0.1.0` 같은 태그를 올리거나 Actions 탭에서 **Build** 워크플로를 직접 실행하면, 두 파일을 빌드해서 릴리스에 첨부해요.
 
 macOS와 Linux에서도 `npm start`로 같은 창이 떠요. `npm run serve`는 창 없이 실행하고 브라우저로 열 주소를 출력해요.
 

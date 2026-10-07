@@ -75,7 +75,7 @@ npm test         # run the tests
 npm run dist     # build the Windows installer and portable exe into dist/
 ```
 
-Releases are built by GitHub Actions on Windows: pushing a tag such as `v0.1.0` builds both files and attaches them to a release.
+Releases are built by GitHub Actions on Windows. Pushing a tag such as `v0.1.0`, or starting the **Build** workflow by hand from the Actions tab, builds both files and attaches them to a release.
 
 On macOS and Linux, `npm start` runs the same window. `npm run serve` runs it without a window and prints an address to open in a browser.
 
