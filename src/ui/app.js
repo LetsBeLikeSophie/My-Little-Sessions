@@ -11,9 +11,9 @@
       working: 'Working', subagent: 'Intern at work', approval: 'Needs approval', waiting: 'Waiting for you', sleeping: 'Asleep', error: 'Error', arriving: 'Arriving', leaving: 'Leaving',
       allow: 'Approve', deny: 'Deny', pass: 'Answer in Claude', answerInClaude: 'Answer this one in Claude.', more: n => `+${n} more`,
       dismiss: 'Clear desk', needsYou: 'Needs your answer',
-      newSession: name => `Start a new session in ${name}`, newHere: 'New session here', newFail: 'Could not open the Claude desktop app.',
-      rcOn: 'Remote on', rcOff: 'Remote off', rcOnLong: 'Remote Control is connected.', rcOffLong: 'Remote Control is off for this session.',
-      copyRc: 'Copy /remote-control', copied: 'Copied. Paste it into that session and press Enter.', copyFail: 'Could not copy. Type /remote-control in that session.',
+      newSession: name => `Start a new session in ${name}`, newFail: 'Could not open the Claude desktop app.',
+      rcOn: 'Remote on', rcOff: 'Remote off', rcOnTip: 'Remote Control is on', rcOffTip: 'Remote Control is off. Click to copy /remote-control',
+      copied: 'Copied. Paste it into that session and press Enter.', copyFail: 'Could not copy. Type /remote-control in that session.',
       connectNone: 'Not connected to Claude Code yet. Connecting adds hooks to your Claude Code settings file (the original is backed up first), and sessions show up here whenever they do something.',
       connectOutdated: 'The hooks in your Claude Code settings are from an older version or incomplete. Connect again to bring them up to date.',
       connectBtn: 'Connect to Claude Code', reconnectBtn: 'Connect again',
@@ -32,9 +32,9 @@
       working: '작업 중', subagent: '인턴 투입', approval: '승인 대기', waiting: '입력 대기', sleeping: '자는 중', error: '오류', arriving: '출근 중', leaving: '퇴근 중',
       allow: '승인', deny: '거절', pass: 'Claude에서 답하기', answerInClaude: '이 요청은 Claude에서 답해 주세요.', more: n => `외 ${n}건`,
       dismiss: '자리 치우기', needsYou: '확인이 필요해요',
-      newSession: name => `${name}에서 새 세션 시작`, newHere: '여기에 새 세션', newFail: 'Claude 데스크톱 앱을 열지 못했어요.',
-      rcOn: '원격 켜짐', rcOff: '원격 꺼짐', rcOnLong: '리모트 컨트롤이 연결돼 있어요.', rcOffLong: '이 세션은 리모트 컨트롤이 꺼져 있어요.',
-      copyRc: '/remote-control 복사', copied: '복사했어요. 그 세션에 붙여 넣고 Enter를 누르세요.', copyFail: '복사하지 못했어요. 그 세션에서 /remote-control을 직접 입력해 주세요.',
+      newSession: name => `${name}에서 새 세션 시작`, newFail: 'Claude 데스크톱 앱을 열지 못했어요.',
+      rcOn: '원격 켜짐', rcOff: '원격 꺼짐', rcOnTip: '리모트 컨트롤 켜짐', rcOffTip: '리모트 컨트롤 꺼짐. 누르면 /remote-control을 복사해요',
+      copied: '복사했어요. 그 세션에 붙여 넣고 Enter를 누르세요.', copyFail: '복사하지 못했어요. 그 세션에서 /remote-control을 직접 입력해 주세요.',
       connectNone: '아직 Claude Code와 연결되지 않았어요. 연결하면 Claude Code 설정 파일에 훅이 추가되고(원래 파일은 먼저 백업해요), 세션이 움직일 때마다 여기에 나타나요.',
       connectOutdated: 'Claude Code 설정에 있는 훅이 예전 버전이거나 일부만 있어요. 다시 연결하면 최신 상태로 맞춰져요.',
       connectBtn: 'Claude Code에 연결', reconnectBtn: '다시 연결',
@@ -55,12 +55,9 @@
   const key = location.hash.slice(1);
   history.replaceState(null, '', location.pathname);
 
-  const stage = $('stage'), canvas = $('office'), listEl = $('list'), emptyEl = $('empty'), card = $('card');
+  const stage = $('stage'), canvas = $('office'), listEl = $('list'), emptyEl = $('empty'), card = $('card'), deskCard = $('deskcard');
   canvas.setAttribute('aria-label', T.canvas);
   emptyEl.textContent = T.empty;
-  $('card-dismiss').textContent = T.dismiss;
-  $('card-copy').textContent = T.copyRc;
-  $('card-new').textContent = T.newHere;
   $('disconnect').textContent = T.disconnect;
   $('connect-warn').textContent = T.connectWarn;
   $('notice-ok').textContent = T.ok;
@@ -71,7 +68,7 @@
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const visuals = new Map();   // session id -> what is drawn and its DOM
   const desks = new Map();     // "team#n" -> one desk on screen, shared by the sessions of one project
-  let snapshot = null, first = true, time = 0, rows = 2, cardFor = null, toastTimer = 0, fillers = [];
+  let snapshot = null, first = true, time = 0, rows = 2, cardFor = null, deskFor = null, toastTimer = 0, fillers = [];
 
   // ---------- talking to the app ----------
   async function post(path, body) {
@@ -90,6 +87,28 @@
     toastTimer = setTimeout(() => { el.hidden = true; }, 4000);
   }
 
+  // ---------- pixel icons ----------
+  const ICONS = {
+    headset: [[3, 1, 6, 1, 'a'], [2, 2, 1, 1, 'a'], [9, 2, 1, 1, 'a'], [1, 3, 1, 3, 'a'], [10, 3, 1, 3, 'a'], [0, 6, 3, 4, 'd'], [9, 6, 3, 4, 'd'], [1, 7, 1, 2, 'a'], [10, 7, 1, 2, 'a'], [2, 10, 1, 1, 'd'], [3, 11, 4, 1, 'd'], [7, 11, 1, 1, 'a']],
+    leave: [[1, 1, 7, 10, '#9C6B43'], [2, 2, 5, 3, '#B98556'], [2, 6, 5, 4, '#B98556'], [6, 6, 1, 1, '#E9C46A'], [7, 5, 4, 2, '#E8590C'], [9, 3, 1, 6, '#E8590C'], [10, 4, 1, 4, '#E8590C'], [11, 5, 1, 2, '#E8590C']],
+    addPerson: [[1, 1, 5, 1, '#2B2233'], [1, 2, 5, 3, '#F2C9A0'], [2, 3, 1, 1, '#1E1A20'], [4, 3, 1, 1, '#1E1A20'], [0, 6, 7, 5, '#3A86C8'], [9, 2, 2, 6, '#2F9E7A'], [7, 4, 6, 2, '#2F9E7A']],
+    folder: [[0, 2, 5, 2, '#C9952B'], [0, 4, 12, 7, '#E2B23A'], [0, 4, 12, 1, '#C9952B']]
+  };
+  function icon(name, off) {
+    const c = document.createElement('canvas');
+    c.width = 12; c.height = 12; c.className = 'ico';
+    const g = c.getContext('2d');
+    for (const [x, y, w, h, col] of ICONS[name]) {
+      g.fillStyle = col === 'a' ? (off ? '#8A96A0' : '#1FB89A') : col === 'd' ? (off ? '#6B7780' : '#2B2F38') : col;
+      g.fillRect(x, y, w, h);
+    }
+    if (off) { g.fillStyle = '#E03131'; for (let i = 0; i < 10; i++) g.fillRect(1 + i, 10 - i, 2, 1); }
+    return c;
+  }
+  $('card-dismiss').append(icon('leave'));
+  $('card-dismiss').title = T.dismiss; $('card-dismiss').setAttribute('aria-label', T.dismiss);
+  $('desk-new').append(icon('addPerson'));
+
   // ---------- characters and desks ----------
   const PITCH = office.PITCH, SEATS_PER_DESK = 6;
   const teamSeen = new Map();   // team -> when it first appeared, so desks keep their place as people come and go
@@ -104,9 +123,10 @@
   function makeDesk(team) {
     const tag = document.createElement('button');
     tag.type = 'button'; tag.className = 'tag';
-    tag.addEventListener('click', () => newSession(team));
+    const d = { team, tag, deco: hash(team) % 3, cur: null, tgt: null, row: 0, slots: [], name: '', project: '' };
+    tag.addEventListener('click', () => (deskFor === d ? closeCards() : openDeskCard(d)));
     stage.append(tag);
-    return { team, tag, deco: hash(team) % 3, cur: null, tgt: null, row: 0, slots: [], name: '' };
+    return d;
   }
 
   // Decides who sits where. Sessions of one project share a desk, in the order they started.
@@ -122,10 +142,10 @@
     for (const [team, members] of groups) {
       const slots = members;
       for (let n = 0; n * SEATS_PER_DESK < slots.length; n++) {
-        wanted.set(team + '#' + n, { team, name: members[0].session.projectName, slots: slots.slice(n * SEATS_PER_DESK, (n + 1) * SEATS_PER_DESK) });
+        wanted.set(team + '#' + n, { team, name: members[0].session.projectName, project: members[0].session.project, slots: slots.slice(n * SEATS_PER_DESK, (n + 1) * SEATS_PER_DESK) });
       }
     }
-    for (const [k, d] of [...desks]) if (!wanted.has(k)) { d.tag.remove(); desks.delete(k); }
+    for (const [k, d] of [...desks]) if (!wanted.has(k)) { if (deskFor === d) closeCards(); d.tag.remove(); desks.delete(k); }
 
     const ends = [];
     let x = office.ROW_X, row = 0;
@@ -136,9 +156,8 @@
       const tgt = { x, T: office.rowT(row), w: width, pad };
       if (!d) { d = makeDesk(w.team); d.cur = { x: tgt.x, T: tgt.T, w: PITCH, pad: 0 }; }
       desks.delete(k); desks.set(k, d);   // keep the map in seating order
-      d.tgt = tgt; d.row = row; d.slots = w.slots; d.name = w.name;
+      d.tgt = tgt; d.row = row; d.slots = w.slots; d.name = w.name; d.project = w.project;
       d.tag.textContent = w.name;
-      d.tag.title = T.newSession(w.name); d.tag.setAttribute('aria-label', T.newSession(w.name));
       w.slots.forEach((v, i) => {
         if (v.desk !== d) { v.desk = d; v.si = i; }
         v.slot = i;
@@ -157,7 +176,7 @@
   }
   function refresh() {
     const need = arrange();
-    if (need !== rows) { rows = need; office.layout(rows); closeCard(); }
+    if (need !== rows) { rows = need; office.layout(rows); closeCards(); }
     stage.style.aspectRatio = `${office.W} / ${office.H}`;
     emptyEl.hidden = visuals.size > 0;
   }
@@ -181,7 +200,6 @@
       const c = d.cur;
       d.tag.style.left = pct((c.x + c.w / 2) / W); d.tag.style.top = pct((c.T + 16.5) / H);
       d.tag.style.maxWidth = pct(Math.max(0, c.w - 20) / W);
-      d.tag.disabled = !(snapshot && snapshot.canNew);   // only the desktop app can open Claude
     }
     for (const v of visuals.values()) {
       if (v.ask.hidden || !v.desk) continue;
@@ -254,10 +272,10 @@
     const li = document.createElement('li');
     li.className = 'row';
     li.innerHTML = '<span class="sw"></span><span class="nm"><span class="nmtxt"></span><span class="rc" hidden></span></span><span class="pill"><i></i><span class="pilltxt"></span></span><span class="ev"></span>'
-      + '<span class="acts"><button type="button" class="yes"></button><button type="button" class="no"></button><button type="button" class="x">×</button></span>';
+      + '<span class="acts"><button type="button" class="yes"></button><button type="button" class="no"></button><button type="button" class="x icon"></button></span>';
     const r = sel => li.querySelector(sel);
     r('.yes').textContent = T.allow; r('.no').textContent = T.deny;
-    r('.x').setAttribute('aria-label', T.dismiss); r('.x').title = T.dismiss;
+    r('.x').append(icon('leave')); r('.x').setAttribute('aria-label', T.dismiss); r('.x').title = T.dismiss;
     r('.yes').addEventListener('click', () => decide(v, 'allow'));
     r('.no').addEventListener('click', () => decide(v, 'deny'));
     r('.x').addEventListener('click', () => post('/api/dismiss', { session: v.id }));
@@ -292,14 +310,14 @@
       more.hidden = pending.length < 2; more.textContent = T.more(pending.length - 1);
       v.ask.querySelector('.ask-btns').hidden = !canDecide;
       v.ask.querySelector('.ask-note').hidden = canDecide;
-      if (cardFor === v) closeCard();
+      if (cardFor === v) closeCards();
     } else {
       v.ask.classList.remove('open');
       v.ask.querySelector('.ask-req').setAttribute('aria-expanded', 'false');
     }
   }
   function remove(v) {
-    if (cardFor === v) closeCard();
+    if (cardFor === v) closeCards();
     v.ask.remove(); v.row.remove();
     visuals.delete(v.id);
     refresh();
@@ -332,15 +350,16 @@
     const res = await post('/api/new', { team });
     if (!res.ok) toast(T.newFail);
   }
-  function closeCard() { cardFor = null; card.hidden = true; }
+  function closeCards() { cardFor = null; deskFor = null; card.hidden = true; deskCard.hidden = true; }
+  // The card for one character: its name, what it is doing, and two icon buttons.
   function fillCard(v) {
-    const known = typeof v.session.remote === 'boolean';
+    const s = v.session, rc = $('card-rc');
     $('card-name').textContent = v.label;
-    $('card-path').textContent = v.session.cwd;
-    $('card-rc').hidden = !known;
-    $('card-rc').textContent = v.session.remote ? T.rcOnLong : T.rcOffLong;
-    $('card-copy').hidden = v.session.remote !== false;
-    $('card-new').hidden = !(snapshot && snapshot.canNew);
+    $('card-info').textContent = T[s.state];
+    rc.hidden = typeof s.remote !== 'boolean';
+    rc.replaceChildren(icon('headset', s.remote === false));
+    rc.disabled = s.remote !== false;
+    rc.title = s.remote ? T.rcOnTip : T.rcOffTip; rc.setAttribute('aria-label', rc.title);
   }
   async function copyText(text) {
     try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* fall back below */ }
@@ -351,28 +370,48 @@
     area.remove();
     return ok;
   }
+  const cardSpot = (el, x, T) => {
+    el.style.left = Math.min(80, Math.max(20, x / office.W * 100)) + '%';
+    el.style.top = (T / office.H * 100) + '%';
+    el.hidden = false;
+  };
   function openCard(v) {
+    closeCards();
     cardFor = v;
     fillCard(v);
-    card.style.left = Math.min(78, Math.max(22, v.cx / office.W * 100)) + '%';
-    card.style.top = ((v.T - 26) / office.H * 100) + '%';
-    card.hidden = false;
+    cardSpot(card, v.cx, v.T - 26);
   }
-  const visualAt = e => {
+  // The card for a desk: where the project lives, and a button that adds a teammate.
+  function openDeskCard(d) {
+    closeCards();
+    deskFor = d;
+    $('desk-name').textContent = d.name;
+    $('desk-path').replaceChildren(icon('folder'), document.createTextNode(d.project));
+    $('desk-new').hidden = !(snapshot && snapshot.canNew);   // only the desktop app can open Claude
+    $('desk-new').title = T.newSession(d.name); $('desk-new').setAttribute('aria-label', T.newSession(d.name));
+    cardSpot(deskCard, d.cur.x + d.cur.w / 2, d.cur.T - 26);
+  }
+  // What is under the pointer: a seated character (above the desk top) or the desk itself.
+  const targetAt = e => {
     const r = canvas.getBoundingClientRect();
     const x = (e.clientX - r.left) / r.width * office.W, y = (e.clientY - r.top) / r.height * office.H;
-    return [...visuals.values()].find(v => v.mode === 'seated' && Math.abs(x - v.cx) <= 20 && y >= v.T - 34 && y <= v.T + 27) || null;
+    const v = [...visuals.values()].find(c => c.mode === 'seated' && Math.abs(x - c.cx) <= 20 && y >= c.T - 34 && y < c.T + 3);
+    if (v) return { v };
+    const d = [...desks.values()].find(k => x >= k.cur.x && x <= k.cur.x + k.cur.w && y >= k.cur.T && y <= k.cur.T + 27);
+    return d ? { d } : null;
   };
   canvas.addEventListener('click', e => {
-    const v = visualAt(e);
-    if (!v || v === cardFor || v.session.pending.length) return closeCard();
-    openCard(v);
+    const hit = targetAt(e);
+    if (!hit) return closeCards();
+    if (hit.d) return hit.d === deskFor ? closeCards() : openDeskCard(hit.d);
+    if (hit.v === cardFor || hit.v.session.pending.length) return closeCards();
+    openCard(hit.v);
   });
-  canvas.addEventListener('mousemove', e => { canvas.style.cursor = visualAt(e) ? 'pointer' : 'default'; });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCard(); });
-  $('card-copy').addEventListener('click', async () => { toast(await copyText('/remote-control') ? T.copied : T.copyFail); });
-  $('card-new').addEventListener('click', () => { if (cardFor) newSession(cardFor.team); closeCard(); });
-  $('card-dismiss').addEventListener('click', () => { if (cardFor) post('/api/dismiss', { session: cardFor.id }); closeCard(); });
+  canvas.addEventListener('mousemove', e => { canvas.style.cursor = targetAt(e) ? 'pointer' : 'default'; });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCards(); });
+  $('card-rc').addEventListener('click', async () => { toast(await copyText('/remote-control') ? T.copied : T.copyFail); });
+  $('card-dismiss').addEventListener('click', () => { if (cardFor) post('/api/dismiss', { session: cardFor.id }); closeCards(); });
+  $('desk-new').addEventListener('click', () => { if (deskFor) newSession(deskFor.team); closeCards(); });
 
   $('skin').addEventListener('change', e => post('/api/settings', { skin: e.target.value }));
   $('approvals').addEventListener('change', e => post('/api/settings', { approvals: e.target.checked }));
