@@ -31,6 +31,8 @@ Windows may show a "Windows protected your PC" notice because the app is not cod
 | Slumps with a red ✕ | The turn ended with an API error |
 | Walks out | The session ended |
 
+The **i** next to the title shows this guide inside the app.
+
 A few more things the office does on its own:
 
 - **The office always matches your sessions.** Characters arrive, change and leave on their own, and reopening the app brings back whoever was there.

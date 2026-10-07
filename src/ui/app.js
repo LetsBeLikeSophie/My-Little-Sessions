@@ -10,7 +10,9 @@
       empty: 'Nobody is in yet. A Claude Code session walks in as soon as it does something.',
       working: 'Working', subagent: 'Intern at work', approval: 'Needs approval', waiting: 'Waiting for you', sleeping: 'Asleep', error: 'Error', arriving: 'Arriving', leaving: 'Leaving',
       allow: 'Approve', deny: 'Deny', pass: 'Answer in Claude', answerInClaude: 'Answer this one in Claude.', more: n => `+${n} more`,
-      dismiss: 'Clear desk', needsYou: 'Needs your answer',
+      dismiss: 'Clear desk', needsYou: 'Needs your answer', info: 'What the icons mean',
+      legend: { laptop: 'Hard at work', chick: 'Intern chick on duty', bang: 'Needs your OK!', coffee: 'Coffee break (remote on)', zzz: 'Snoozing (remote off)', oops: 'Oops, an error',
+        headset: 'Remote Control on', headsetOff: 'Remote off · click to copy the command', leave: 'Clear the desk', addPerson: 'Add a teammate (new session)', folder: 'Click a desk to see its folder' },
       newSession: name => `Start a new session in ${name}`, newFail: 'Could not open the Claude desktop app.',
       rcOn: 'Remote on', rcOff: 'Remote off', rcOnTip: 'Remote Control is on', rcOffTip: 'Remote Control is off. Click to copy /remote-control',
       copied: 'Copied. Paste it into that session and press Enter.', copyFail: 'Could not copy. Type /remote-control in that session.',
@@ -31,7 +33,9 @@
       empty: '아직 출근한 세션이 없어요. Claude Code 세션이 움직이면 문으로 걸어 들어와요.',
       working: '작업 중', subagent: '인턴 투입', approval: '승인 대기', waiting: '입력 대기', sleeping: '자는 중', error: '오류', arriving: '출근 중', leaving: '퇴근 중',
       allow: '승인', deny: '거절', pass: 'Claude에서 답하기', answerInClaude: '이 요청은 Claude에서 답해 주세요.', more: n => `외 ${n}건`,
-      dismiss: '자리 치우기', needsYou: '확인이 필요해요',
+      dismiss: '자리 치우기', needsYou: '확인이 필요해요', info: '아이콘 설명',
+      legend: { laptop: '열일 중', chick: '인턴 병아리 출동', bang: '허락해 주세요!', coffee: '커피 타임 (원격 켜짐)', zzz: '쿨쿨 (원격 꺼짐)', oops: '앗, 오류',
+        headset: '원격 켜짐', headsetOff: '원격 꺼짐 · 누르면 명령어 복사', leave: '자리 치우기', addPerson: '팀원(새 세션) 추가', folder: '책상을 누르면 폴더가 보여요' },
       newSession: name => `${name}에서 새 세션 시작`, newFail: 'Claude 데스크톱 앱을 열지 못했어요.',
       rcOn: '원격 켜짐', rcOff: '원격 꺼짐', rcOnTip: '리모트 컨트롤 켜짐', rcOffTip: '리모트 컨트롤 꺼짐. 누르면 /remote-control을 복사해요',
       copied: '복사했어요. 그 세션에 붙여 넣고 Enter를 누르세요.', copyFail: '복사하지 못했어요. 그 세션에서 /remote-control을 직접 입력해 주세요.',
@@ -92,7 +96,13 @@
     headset: [[3, 1, 6, 1, 'a'], [2, 2, 1, 1, 'a'], [9, 2, 1, 1, 'a'], [1, 3, 1, 3, 'a'], [10, 3, 1, 3, 'a'], [0, 6, 3, 4, 'd'], [9, 6, 3, 4, 'd'], [1, 7, 1, 2, 'a'], [10, 7, 1, 2, 'a'], [2, 10, 1, 1, 'd'], [3, 11, 4, 1, 'd'], [7, 11, 1, 1, 'a']],
     leave: [[1, 1, 7, 10, '#9C6B43'], [2, 2, 5, 3, '#B98556'], [2, 6, 5, 4, '#B98556'], [6, 6, 1, 1, '#E9C46A'], [7, 5, 4, 2, '#E8590C'], [9, 3, 1, 6, '#E8590C'], [10, 4, 1, 4, '#E8590C'], [11, 5, 1, 2, '#E8590C']],
     addPerson: [[1, 1, 5, 1, '#2B2233'], [1, 2, 5, 3, '#F2C9A0'], [2, 3, 1, 1, '#1E1A20'], [4, 3, 1, 1, '#1E1A20'], [0, 6, 7, 5, '#3A86C8'], [9, 2, 2, 6, '#2F9E7A'], [7, 4, 6, 2, '#2F9E7A']],
-    folder: [[0, 2, 5, 2, '#C9952B'], [0, 4, 12, 7, '#E2B23A'], [0, 4, 12, 1, '#C9952B']]
+    folder: [[0, 2, 5, 2, '#C9952B'], [0, 4, 12, 7, '#E2B23A'], [0, 4, 12, 1, '#C9952B']],
+    laptop: [[1, 1, 10, 7, '#4A5563'], [2, 2, 8, 5, '#2B2F38'], [3, 3, 3, 1, '#7FDBCA'], [3, 5, 5, 1, '#FFD166'], [0, 9, 12, 2, '#39424E']],
+    chick: [[3, 2, 6, 1, '#FFD84D'], [2, 3, 8, 6, '#FFD84D'], [3, 6, 4, 2, '#F2BF2B'], [7, 4, 1, 1, '#1E1A20'], [10, 5, 2, 1, '#F08C00'], [4, 9, 1, 2, '#F08C00'], [7, 9, 1, 2, '#F08C00']],
+    bang: [[1, 1, 10, 10, '#F0A202'], [5, 3, 2, 4, '#1E1A10'], [5, 8, 2, 2, '#1E1A10']],
+    coffee: [[1, 3, 9, 9, '#39424E'], [2, 4, 7, 7, '#F4F1EA'], [3, 4, 5, 2, '#6B4226'], [10, 5, 2, 1, '#39424E'], [11, 6, 1, 3, '#39424E'], [10, 9, 2, 1, '#39424E'], [4, 0, 1, 2, '#8A96A0'], [7, 1, 1, 2, '#8A96A0']],
+    zzz: [[1, 1, 5, 1, '#5E87A8'], [4, 2, 1, 1, '#5E87A8'], [3, 3, 1, 1, '#5E87A8'], [2, 4, 1, 1, '#5E87A8'], [1, 5, 5, 1, '#5E87A8'], [7, 7, 4, 1, '#5E87A8'], [9, 8, 1, 1, '#5E87A8'], [8, 9, 1, 1, '#5E87A8'], [7, 10, 4, 1, '#5E87A8']],
+    oops: [[1, 1, 10, 10, '#E03131'], [3, 3, 2, 2, '#FFFFFF'], [7, 3, 2, 2, '#FFFFFF'], [5, 5, 2, 2, '#FFFFFF'], [3, 7, 2, 2, '#FFFFFF'], [7, 7, 2, 2, '#FFFFFF']]
   };
   function icon(name, off) {
     const c = document.createElement('canvas');
@@ -108,6 +118,19 @@
   $('card-dismiss').append(icon('leave'));
   $('card-dismiss').title = T.dismiss; $('card-dismiss').setAttribute('aria-label', T.dismiss);
   $('desk-new').append(icon('addPerson'));
+
+  // The little guide behind the "i" next to the title: one line per picture.
+  const infoBtn = $('info-btn'), legend = $('legend');
+  infoBtn.title = T.info; infoBtn.setAttribute('aria-label', T.info);
+  for (const name of ['laptop', 'chick', 'bang', 'coffee', 'zzz', 'oops', 'headset', 'headsetOff', 'folder', 'addPerson', 'leave']) {
+    const li = document.createElement('li'), text = document.createElement('span');
+    text.textContent = T.legend[name];
+    li.append(name === 'headsetOff' ? icon('headset', true) : icon(name), text);
+    legend.append(li);
+  }
+  const showLegend = on => { legend.hidden = !on; infoBtn.setAttribute('aria-expanded', String(on)); };
+  infoBtn.addEventListener('click', e => { e.stopPropagation(); showLegend(legend.hidden); });
+  document.addEventListener('click', e => { if (!legend.hidden && !legend.contains(e.target)) showLegend(false); });
 
   // ---------- characters and desks ----------
   const PITCH = office.PITCH, SEATS_PER_DESK = 6;
@@ -408,7 +431,7 @@
     openCard(hit.v);
   });
   canvas.addEventListener('mousemove', e => { canvas.style.cursor = targetAt(e) ? 'pointer' : 'default'; });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCards(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeCards(); showLegend(false); } });
   $('card-rc').addEventListener('click', async () => { toast(await copyText('/remote-control') ? T.copied : T.copyFail); });
   $('card-dismiss').addEventListener('click', () => { if (cardFor) post('/api/dismiss', { session: cardFor.id }); closeCards(); });
   $('desk-new').addEventListener('click', () => { if (deskFor) newSession(deskFor.team); closeCards(); });

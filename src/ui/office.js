@@ -285,6 +285,9 @@ window.PixelOffice = function (canvas) {
       const cx = s.cx, T = d.T, st = s.state;
       if (night && st !== 'waiting' && st !== 'sleeping') { R(cx - 8, T - 21, 16, 2, 'rgba(150,205,255,.07)'); R(cx - 10, T - 19, 20, 19, 'rgba(150,205,255,.07)'); R(cx - 7, T - 16, 14, 13, 'rgba(170,215,255,.10)'); R(cx - 1, T - 3, 2, 2, st === 'error' ? '#FF8A80' : '#DFF4FF'); }
       if (st === 'working' || st === 'subagent') {
+        // the laptop screen lights the face and chest from below, flickering a little as lines go by
+        const lit = (night ? 0.22 : 0.38) + 0.07 * Math.sin(t * 6 + s.seed * 3);
+        R(cx - 5, T - 9, 10, 3, 'rgba(200,238,255,' + lit.toFixed(2) + ')'); R(cx - 6, T - 13, 12, 4, 'rgba(200,238,255,' + (lit * 0.6).toFixed(2) + ')');
         const cs = ['#7FDBCA', '#FFD166', '#F78FB3'];
         for (let i = 0; i < 3; i++) {
           const ph = (t * 0.7 + s.seed * 0.37 + i / 3) % 1;
@@ -296,7 +299,7 @@ window.PixelOffice = function (canvas) {
       if (st === 'error') errorBubble(cx - 17, T - 37);
       if (st === 'sleeping') {
         for (let i = 0; i < 3; i++) {
-          const ph = (t * 0.3 + s.seed * 0.21 + i / 3) % 1;
+          const ph = (t * 0.11 + s.seed * 0.21 + i / 3) % 1;   // slow and drifting, unlike the quick code lines of someone working
           ctx.globalAlpha = 1 - ph * 0.85;
           zzz(cx + 8 + ph * 10, T - 16 - ph * 18, ph < 0.35 ? 4 : ph < 0.7 ? 5 : 6);
         }
