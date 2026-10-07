@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { Office, describe, baseName, STALE_MS, SLEEP_MS } = require('../src/sessions');
+const { Office, describe, baseName, projectRoot, teamKey, STALE_MS, SLEEP_MS } = require('../src/sessions');
 
 const ev = (name, extra = {}) => ({ session_id: 's1', cwd: 'C:\\Projects\\blog-api', hook_event_name: name, ...extra });
 const only = office => office.snapshot()[0];
@@ -167,4 +167,21 @@ test('Remote Control is unknown until a hook reports it, then follows each repor
   const again = new Office();
   again.restore(JSON.parse(JSON.stringify(o.export())));
   assert.equal(only(again).remote, null, 'not carried across a restart');
+});
+
+test('sessions of one project share a team, including worktrees and Windows casing', () => {
+  const o = new Office();
+  const start = (id, cwd) => o.handle({ session_id: id, cwd, hook_event_name: 'SessionStart' });
+  start('a', 'C:\\Projects\\blog-api');
+  start('b', 'c:\\projects\\Blog-API\\');
+  start('c', 'C:\\Projects\\blog-api\\.claude\\worktrees\\fix-login');
+  start('d', 'C:\\Projects\\recipe-app');
+  const snap = o.snapshot();
+  assert.equal(new Set(snap.slice(0, 3).map(s => s.team)).size, 1);
+  assert.notEqual(snap[3].team, snap[0].team);
+  assert.equal(snap[2].name, 'fix-login');
+  assert.equal(snap[2].projectName, 'blog-api');
+  assert.equal(snap[2].project, 'C:\\Projects\\blog-api');
+  assert.equal(projectRoot('/home/sophie/app/.claude/worktrees/x/sub'), '/home/sophie/app');
+  assert.notEqual(teamKey('/home/sophie/App'), teamKey('/home/sophie/app'), 'case matters outside Windows');
 });

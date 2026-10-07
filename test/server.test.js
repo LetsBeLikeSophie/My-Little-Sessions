@@ -153,6 +153,18 @@ test('dismiss removes a session', async t => {
   assert.equal(srv.office.snapshot().length, 0);
 });
 
+test('a new session can only be started for a project that is already in the office', async t => {
+  const opened = [];
+  const { hook, api } = await boot(t, { onNew: project => { opened.push(project); } });
+  await hook({ hook_event_name: 'SessionStart', cwd: '/home/sophie/blog-api/.claude/worktrees/fix' });
+  assert.deepEqual(await (await api('/api/new', { team: '/etc' })).json(), { ok: false });
+  assert.deepEqual(await (await api('/api/new', { team: '/home/sophie/blog-api' })).json(), { ok: true });
+  assert.deepEqual(opened, ['/home/sophie/blog-api']);
+  const plain = await boot(t);
+  await plain.hook({ hook_event_name: 'SessionStart' });
+  assert.deepEqual(await (await plain.api('/api/new', { team: '/home/sophie/blog-api' })).json(), { ok: false });
+});
+
 test('the page and health check are served, other paths are not', async t => {
   const { srv } = await boot(t);
   const page = await fetch(srv.url + '/');

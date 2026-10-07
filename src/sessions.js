@@ -17,6 +17,17 @@ function baseName(cwd) {
   return parts[parts.length - 1] || 'session';
 }
 
+// The project a session belongs to: its folder, or the main checkout when it runs in a worktree.
+function projectRoot(cwd) {
+  return String(cwd || '').replace(/[\\/]+$/, '').replace(/[\\/]\.claude[\\/]worktrees[\\/].*$/, '');
+}
+
+// Sessions with the same key sit at the same desk. Windows paths compare without regard to case.
+function teamKey(project) {
+  const p = project.replace(/\\/g, '/');
+  return /^[a-zA-Z]:\//.test(p) || project.includes('\\') ? p.toLowerCase() : p;
+}
+
 function clip(text, max) {
   const s = String(text).replace(/\s+/g, ' ').trim();
   return s.length > max ? s.slice(0, max - 1) + '…' : s;
@@ -192,8 +203,10 @@ class Office extends EventEmitter {
   snapshot() {
     return [...this.sessions.values()]
       .sort((a, b) => a.startedAt - b.startedAt)
+      .map(s => ({ ...s, project: projectRoot(s.cwd) }))
       .map(s => ({
         id: s.id, name: s.name, cwd: s.cwd, ev: s.ev, error: s.error, remote: s.remote,
+        project: s.project, projectName: baseName(s.project), team: teamKey(s.project),
         state: s.pending.length ? 'approval' : s.error ? 'error' : s.subagents > 0 ? 'subagent'
           : s.base === 'waiting' && this.now() - s.lastAt > SLEEP_MS ? 'sleeping' : s.base,
         pending: s.pending.map(p => ({ id: p.id, tool: p.tool, text: p.text, canDecide: p.canDecide }))
@@ -201,4 +214,4 @@ class Office extends EventEmitter {
   }
 }
 
-module.exports = { Office, baseName, describe, STALE_MS, SLEEP_MS };
+module.exports = { Office, baseName, describe, projectRoot, teamKey, STALE_MS, SLEEP_MS };

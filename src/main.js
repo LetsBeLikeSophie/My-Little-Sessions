@@ -22,6 +22,8 @@ if (!app.requestSingleInstanceLock()) {
       configDir: app.getPath('userData'),
       version: app.getVersion(),
       desktop: true,
+      // The empty chair at a team's desk: start a new Code session for that project in the Claude desktop app.
+      onNew: project => shell.openExternal('claude://code/new?folder=' + encodeURIComponent(project)),
       onAttention: () => { if (win && !win.isFocused()) win.flashFrame(true); },
       onSettings: settings => { if (win) win.setAlwaysOnTop(Boolean(settings.onTop)); }
     });

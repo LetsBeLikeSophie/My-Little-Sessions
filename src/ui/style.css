@@ -48,8 +48,11 @@ button.link { border: 0; background: none; padding: 0; color: var(--muted); text
 
 .stage { position: relative; max-width: 100%; aspect-ratio: 320 / 200; border: 4px solid var(--frame); box-shadow: 8px 8px 0 var(--drop); container-type: inline-size; background: var(--frame); }
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
-.tag { position: absolute; transform: translate(-50%, -50%); max-width: 15.5%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; font: 600 clamp(7px, 1.8cqw, 16px)/1 var(--f-pixel); color: var(--plate-text); }
+.tag { position: absolute; transform: translate(-50%, -50%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; font: 600 clamp(7px, 1.8cqw, 16px)/1 var(--f-pixel); color: var(--plate-text); }
 .tag.off { opacity: .45; }
+/* the spare chair at each team desk: starts a new session for that project */
+.plus { position: absolute; transform: translate(-50%, -50%); display: grid; place-items: center; width: 4.8cqw; height: 4.8cqw; min-width: 20px; min-height: 20px; padding: 0; font: 600 clamp(13px, 3.2cqw, 28px)/1 var(--f-pixel); box-shadow: 2px 2px 0 var(--drop); }
+.plus:hover { background: var(--st-work); color: var(--on-ask); filter: none; }
 .empty { position: absolute; left: 50%; bottom: 2.5%; transform: translateX(-50%); width: max-content; max-width: 86%; margin: 0; padding: 8px 12px; text-align: center; background: var(--surface); color: var(--ink); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--drop); }
 
 /* speech bubble above a character that needs an answer, and the card shown when a character is clicked */

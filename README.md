@@ -2,7 +2,7 @@
 
 **English** · [한국어](README.ko.md)
 
-A tiny pixel-art office for your Claude Code sessions. Every session is a little employee at a desk: typing while Claude works, sipping coffee while it waits for you, and raising a hand when it needs permission. You can approve or deny right from the speech bubble.
+A tiny pixel-art office for your Claude Code sessions. Every session is a little employee, sitting with the others from the same project: typing while Claude works, sipping coffee while it waits for you, and raising a hand when it needs permission. You can approve or deny right from the speech bubble.
 
 [![Download installer for Windows](https://img.shields.io/badge/Download-Windows%20installer-2F9E7A?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/LetsBeLikeSophie/My-Little-Sessions/releases/latest/download/My-Little-Sessions-Setup.exe)
 [![Download portable exe](https://img.shields.io/badge/Download-Portable%20.exe-5E87A8?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/LetsBeLikeSophie/My-Little-Sessions/releases/latest/download/My-Little-Sessions-Portable.exe)
@@ -23,7 +23,7 @@ Windows may show a "Windows protected your PC" notice because the app is not cod
 | --- | --- |
 | Walks in from the door | The session started |
 | Types, with bits of code floating up | Claude is working on your prompt or running a tool |
-| A chick intern appears on the desk | A subagent is running |
+| A chick intern rides on its head | A subagent is running |
 | Raises a hand, with a speech bubble | Claude needs your permission |
 | Wears a headset | Remote Control is connected for that session |
 | Sips coffee | Claude just finished and is waiting for you |
@@ -34,10 +34,11 @@ Windows may show a "Windows protected your PC" notice because the app is not cod
 A few more things the office does on its own:
 
 - **The office always matches your sessions.** Characters arrive, change and leave on their own, and reopening the app brings back whoever was there.
-- **Desks are added as you need them.** Three more appear whenever every desk is taken.
+- **Sessions of the same project sit together.** They share one long desk with the project's name on it and wear the same colour. The desk grows when a teammate arrives and closes up when one leaves. Sessions in a worktree sit with their project.
+- **The empty chair with a + starts a new session.** Every team keeps one spare chair. Clicking it opens the Claude desktop app with a new session in that project, and the new teammate walks in and takes the seat.
 - **The wall clock and the sky outside follow your real time**, so the office goes through day, sunset and night with you.
 - **Characters can be people, cats, dogs, bears, rabbits, or a mix.** A session keeps the same look for as long as it lives.
-- **Clicking a character** shows which project folder it belongs to, with a button to clear its desk. If its Remote Control is off, there is also a button that copies `/remote-control` so you can paste it into that session.
+- **Clicking a character** shows which folder it is working in, with a button to clear its desk. If its Remote Control is off, there is also a button that copies `/remote-control` so you can paste it into that session.
 - **The headset follows the session's last activity.** If Remote Control drops while a session sits idle, the headset comes off the next time that session does something.
 
 ## Approving from the office

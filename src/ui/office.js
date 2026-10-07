@@ -7,11 +7,11 @@ window.PixelOffice = function (canvas) {
   const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
 
   // ---------- scene constants ----------
-  const COLS = [66, 160, 254], ROW_GAP = 58;
+  // Desks are made of seats 43 pixels apart; a row of desks runs from ROW_X to ROW_END.
+  const ROW_GAP = 58, PITCH = 43, ROW_X = 31, ROW_END = 311, DESK_GAP = 10;
   const rowT = r => 96 + r * ROW_GAP;
   const corrY = r => r === 0 ? 73 : rowT(r) - 17;
   const DOOR = { x: 21, y: 62 };
-  let desks = [];
   const WIN = [66, 135, 204];
   const P = {
     wall: '#D9E3E1', wallLo: '#C4D2D0', trim2: '#AFC0BE', trim: '#8A9E9E',
@@ -175,14 +175,23 @@ window.PixelOffice = function (canvas) {
       const wv = Math.round(Math.sin(t * 9));
       R(cx + 5, by + 1, 4, 3, s.shirt); R(cx + 7, hy + 1, 3, by + 3 - (hy + 1), s.shirt); R(cx + 7 + wv, hy - 3, 3, 4, hc);
     }
+    if (st === 'subagent') {   // the chick intern rides on the head while a subagent runs
+      const bx = cx - 3, y = hy - 6 + (Math.floor(t * 5 + s.seed) % 2 ? 0 : -1);
+      R(bx + 1, y, 5, 1, '#FFD84D'); R(bx, y + 1, 7, 5, '#FFD84D'); R(bx + 1, y + 3, 3, 2, '#F2BF2B');
+      R(bx + 5, y + 2, 1, 1, EYE); R(bx + 7, y + 3, 2, 1, '#F08C00');
+    }
   }
-  function deskBody(d) {
-    const { cx, T } = d, x = cx - 34;
-    R(x + 1, T + 24, 66, 4, P.shadow);
-    R(x, T + 24, 3, 3, P.deskSh); R(x + 65, T + 24, 3, 3, P.deskSh);
-    R(x, T, 68, 9, P.deskTop); R(x, T, 68, 1, P.deskTopHi);
-    R(x, T + 9, 68, 15, P.deskFront); R(x, T + 9, 68, 1, P.deskSh);
-    R(cx - 26, T + 11, 52, 11, P.deskSh);
+  function chair(cx, T) {
+    R(cx - 7, T - 16, 14, 18, P.chair); R(cx - 8, T - 15, 16, 17, P.chair); R(cx - 6, T - 14, 12, 2, P.chairHi);
+  }
+  const closedLaptop = (cx, T) => { R(cx - 7, T + 1, 14, 2, LID2); R(cx - 7, T + 3, 14, 1, LIDSH); };
+  // One desk, as wide as the team sitting at it. The dark inset is where the project name goes.
+  function deskBody(x, T, w) {
+    R(x + 1, T + 24, w - 2, 4, P.shadow);
+    R(x, T + 24, 3, 3, P.deskSh); R(x + w - 3, T + 24, 3, 3, P.deskSh);
+    R(x, T, w, 9, P.deskTop); R(x, T, w, 1, P.deskTopHi);
+    R(x, T + 9, w, 15, P.deskFront); R(x, T + 9, w, 1, P.deskSh);
+    if (w > 24) R(x + 8, T + 11, w - 16, 11, P.deskSh);
   }
   function deco(d, i) {
     const { cx, T } = d, m = i % 3;
@@ -192,8 +201,6 @@ window.PixelOffice = function (canvas) {
   }
   function items(s, d, t) {
     const { cx, T } = d, st = s.state, c = colOf(s), hc = c.hand || c.fur;
-    deco(d, s.desk);
-    if (s.mode !== 'seated') { R(cx - 7, T + 1, 14, 2, LID2); R(cx - 7, T + 3, 14, 1, LIDSH); return; }
     if (st === 'sleeping') { R(cx - 7, T + 3, 14, 2, LID2); R(cx - 7, T + 5, 14, 1, LIDSH); R(cx - 11, T + 1, 3, 2, hc); R(cx + 8, T + 1, 3, 2, hc); return; }
     const on = st !== 'waiting';
     R(cx - 5, T - 6, 10, 9, LID); R(cx - 4, T - 5, 8, 7, LID2); R(cx - 1, T - 3, 2, 2, st === 'error' ? '#E03131' : on ? '#BFE9FF' : LIDSH); R(cx - 6, T + 3, 12, 1, LIDSH);
@@ -212,13 +219,6 @@ window.PixelOffice = function (canvas) {
         R(cx + 10, T - 3, 5, 5, MUG); R(cx + 15, T - 2, 1, 3, MUG); R(cx + 11, T - 3, 3, 1, '#6B4226'); R(cx + 7, T + 1, 3, 2, hc);
         for (let i = 0; i < 2; i++) { const ph = (t * 0.7 + i * 0.5 + s.seed) % 1; R(cx + 11 + i * 2 + Math.round(Math.sin(ph * 6)), T - 5 - ph * 6, 1, 1, 'rgba(255,255,255,' + (0.8 - ph * 0.7).toFixed(2) + ')'); }
       }
-    }
-    if (st === 'subagent') {
-      const bx = cx - 28, hop = Math.floor(t * 5 + s.seed) % 2 ? 0 : -1;
-      R(bx, T - 4 + hop, 7, 6, '#FFD84D'); R(bx + 1, T - 5 + hop, 5, 1, '#FFD84D'); R(bx + 1, T - 1 + hop, 3, 2, '#F2BF2B');
-      R(bx + 5, T - 3 + hop, 1, 1, EYE); R(bx + 7, T - 2 + hop, 2, 1, '#F08C00');
-      R(bx + 1, T + 2, 1, 1, '#F08C00'); R(bx + 4, T + 2, 1, 1, '#F08C00');
-      R(bx + 11, T - 2, 5, 4, LID); R(bx + 10, T + 2, 7, 1, LIDSH);
     }
   }
   function walker(s, t) {
@@ -255,40 +255,41 @@ window.PixelOffice = function (canvas) {
   function layout(rows) {
     H = 200 + (Math.max(2, rows) - 2) * ROW_GAP;
     canvas.width = W; canvas.height = H; ctx.imageSmoothingEnabled = false;
-    desks = [];
-    for (let r = 0; r < Math.max(2, rows); r++) COLS.forEach(cx => desks.push({ cx, T: rowT(r), row: r }));
   }
-  function draw(visuals, t) {
+  // scene.desks: [{ x, T, w, chairs: [cx], seated: [character with cx], closed: [cx], decoAt, deco }]
+  // scene.walkers: characters on their way in or out, positioned by px/py.
+  function draw(scene, t) {
     const mode = skyMode(), night = mode === 'night';
-    const atDesk = new Map(visuals.map(s => [s.desk, s]));
     room(t, mode);
     if (mode === 'dusk') R(0, 0, W, H, 'rgba(255,140,70,.09)');
     const list = [];
-    desks.forEach((d, i) => list.push({ y: d.T + 27, desk: d, s: atDesk.get(i) }));
-    visuals.forEach(s => { if (s.mode === 'in' || s.mode === 'out') list.push({ y: s.py, walk: s }); });
+    scene.desks.forEach(d => list.push({ y: d.T + 27, desk: d }));
+    scene.walkers.forEach(s => list.push({ y: s.py, walk: s }));
     list.sort((a, b) => a.y - b.y);
     for (const it of list) {
       if (it.walk) { walker(it.walk, t); continue; }
-      const d = it.desk, s = it.s;
-      R(d.cx - 7, d.T - 16, 14, 18, P.chair); R(d.cx - 8, d.T - 15, 16, 17, P.chair); R(d.cx - 6, d.T - 14, 12, 2, P.chairHi);
-      if (s && s.mode === 'seated') seated(s, d, t);
-      deskBody(d); if (s) items(s, d, t);
+      const d = it.desk;
+      d.chairs.forEach(cx => chair(cx, d.T));
+      d.seated.forEach(s => seated(s, { cx: s.cx, T: d.T }, t));
+      deskBody(d.x, d.T, d.w);
+      if (d.decoAt != null) deco({ cx: d.decoAt - 26, T: d.T }, d.deco);
+      d.closed.forEach(cx => closedLaptop(cx, d.T));
+      d.seated.forEach(s => items(s, { cx: s.cx, T: d.T }, t));
     }
     if (night) {
       R(0, 0, W, H, 'rgba(12,18,44,.52)');
       WIN.forEach((x, i) => windowAt(x, 10, 50, 30, 'night', t, i));
       R(14, 6, 14, 6, '#3DDC84'); R(16, 8, 3, 2, '#F2FFF7'); R(20, 8, 2, 2, '#F2FFF7'); R(23, 8, 3, 2, '#F2FFF7'); R(283, 24, 1, 1, '#FF5A4F');
     }
-    for (const s of visuals) {
-      if (s.mode !== 'seated' || !desks[s.desk]) continue;
-      const { cx, T } = desks[s.desk], st = s.state;
+    for (const d of scene.desks) for (const s of d.seated) {
+      const cx = s.cx, T = d.T, st = s.state;
       if (night && st !== 'waiting' && st !== 'sleeping') { R(cx - 8, T - 21, 16, 2, 'rgba(150,205,255,.07)'); R(cx - 10, T - 19, 20, 19, 'rgba(150,205,255,.07)'); R(cx - 7, T - 16, 14, 13, 'rgba(170,215,255,.10)'); R(cx - 1, T - 3, 2, 2, st === 'error' ? '#FF8A80' : '#DFF4FF'); }
       if (st === 'working' || st === 'subagent') {
         const cs = ['#7FDBCA', '#FFD166', '#F78FB3'];
         for (let i = 0; i < 3; i++) {
           const ph = (t * 0.7 + s.seed * 0.37 + i / 3) % 1;
           ctx.globalAlpha = 1 - ph;
-          R(cx + 11 + ((i * 2 + s.desk) % 5), T - 6 - ph * 18, 3 + ((i + s.desk) % 3), 1, cs[i]);
+          R(cx + 11 + ((i * 2 + s.variant) % 5), T - 6 - ph * 18, 3 + ((i + s.variant) % 3), 1, cs[i]);
         }
         ctx.globalAlpha = 1;
       }
@@ -303,14 +304,11 @@ window.PixelOffice = function (canvas) {
       }
     }
   }
-  // Which desk (index) is at this point of the canvas, in canvas pixels; -1 when none.
-  const deskAt = (x, y) => desks.findIndex(d => Math.abs(x - d.cx) <= 34 && y >= d.T - 34 && y <= d.T + 27);
 
   layout(2);
   return {
-    W, DOOR, corrY, layout, draw, deskAt,
+    W, DOOR, PITCH, ROW_X, ROW_END, DESK_GAP, rowT, corrY, layout, draw,
     get H() { return H; },
-    get desks() { return desks; },
     setSkin(v) { skin = v; }
   };
 };

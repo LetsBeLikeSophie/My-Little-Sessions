@@ -63,6 +63,7 @@ function createServer(options = {}) {
     hooks: { ...hooksConfig.status(settingsFile, boundPort, config.hookToken), path: settingsFile },
     settings: { skin: config.skin, approvals: config.approvals, onTop: config.onTop },
     desktop: options.desktop === true,
+    canNew: typeof options.onNew === 'function',
     sessions: office.snapshot()
   });
 
@@ -151,6 +152,13 @@ function createServer(options = {}) {
       }
       case '/api/dismiss':
         return json(res, 200, { ok: office.dismiss(String(body.session)) });
+      case '/api/new': {
+        // Only for a project that already has a session in the office.
+        const s = office.snapshot().find(x => x.team === String(body.team));
+        if (!s || !s.project || !options.onNew) return json(res, 200, { ok: false });
+        try { await options.onNew(s.project); return json(res, 200, { ok: true }); }
+        catch (e) { return json(res, 200, { ok: false }); }
+      }
       case '/api/hooks':
         try {
           if (body.action === 'install') hooksConfig.install(settingsFile, boundPort, config.hookToken, platform);
