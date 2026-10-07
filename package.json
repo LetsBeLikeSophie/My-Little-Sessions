@@ -1,0 +1,51 @@
+{
+  "name": "my-little-sessions",
+  "version": "0.1.0",
+  "description": "A pixel-art office where every Claude Code session is a little employee. See what each one is doing and approve or deny permission requests from their desk.",
+  "author": "Sophie (https://github.com/LetsBeLikeSophie)",
+  "license": "MIT",
+  "homepage": "https://github.com/LetsBeLikeSophie/My-Little-Sessions",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LetsBeLikeSophie/My-Little-Sessions.git"
+  },
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "serve": "node src/cli.js",
+    "test": "node --test",
+    "dist": "electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.6.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "io.github.letsbelikesophie.my-little-sessions",
+    "productName": "My Little Sessions",
+    "copyright": "Copyright © 2026 Sophie",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/icon.png",
+      "LICENSE"
+    ],
+    "win": {
+      "icon": "assets/icon.png",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "My-Little-Sessions-Setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "My-Little-Sessions-Portable.${ext}"
+    }
+  }
+}

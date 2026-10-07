@@ -1,0 +1,59 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Includes running the real hook command (cmd.exe + curl.exe) against the server.
+      - run: npm test
+
+      - run: npm run dist
+
+      - name: Start the packaged app and check that it answers
+        shell: pwsh
+        run: |
+          $env:MLS_PORT = "47990"
+          $env:CLAUDE_CONFIG_DIR = Join-Path $env:RUNNER_TEMP "claude"
+          $app = Start-Process -FilePath "dist\win-unpacked\My Little Sessions.exe" -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 60 -and -not $ok; $i++) {
+            Start-Sleep -Seconds 1
+            try { $ok = (Invoke-RestMethod "http://127.0.0.1:47990/health").app -eq "my-little-sessions" } catch { }
+          }
+          taskkill /F /T /PID $app.Id | Out-Null
+          if (-not $ok) { throw "The packaged app did not start." }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: My-Little-Sessions-Windows
+          path: |
+            dist/My-Little-Sessions-Setup.exe
+            dist/My-Little-Sessions-Portable.exe
+          if-no-files-found: error
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/My-Little-Sessions-Setup.exe
+            dist/My-Little-Sessions-Portable.exe
+          generate_release_notes: true

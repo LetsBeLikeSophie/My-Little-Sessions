@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Little Sessions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>My Little Sessions</h1>
+      <p class="by">made by Sophie</p>
+    </div>
+    <div class="tools">
+      <label class="field"><span data-t="characters"></span>
+        <select id="skin">
+          <option value="auto" data-t="mix"></option>
+          <option value="human" data-t="human"></option>
+          <option value="cat" data-t="cat"></option>
+          <option value="dog" data-t="dog"></option>
+          <option value="bear" data-t="bear"></option>
+          <option value="rabbit" data-t="rabbit"></option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="approvals"><span data-t="approveHere"></span></label>
+      <label class="check" id="ontop-wrap"><input type="checkbox" id="ontop"><span data-t="onTop"></span></label>
+    </div>
+  </header>
+
+  <section class="connect" id="connect" hidden>
+    <p id="connect-text"></p>
+    <button type="button" id="connect-btn" class="solid"></button>
+  </section>
+
+  <div class="stage" id="stage">
+    <canvas id="office" role="img"></canvas>
+    <p class="empty" id="empty" hidden></p>
+    <div class="card" id="card" role="group" hidden>
+      <span class="card-name" id="card-name"></span>
+      <span class="card-path" id="card-path"></span>
+      <span class="card-btns">
+        <button type="button" id="card-open" class="solid"></button>
+        <button type="button" id="card-dismiss"></button>
+      </span>
+    </div>
+  </div>
+
+  <section class="board">
+    <h2 data-t="sessions"></h2>
+    <ul id="list"></ul>
+  </section>
+
+  <footer class="foot">
+    <span id="hook-state"></span>
+    <button type="button" id="disconnect" class="link" hidden></button>
+    <span class="ver"><span id="version"></span> · <a href="https://github.com/LetsBeLikeSophie/My-Little-Sessions" target="_blank" rel="noopener">GitHub</a></span>
+  </footer>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="office.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
