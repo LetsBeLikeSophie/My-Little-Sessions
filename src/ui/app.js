@@ -10,13 +10,15 @@
       empty: 'Nobody is in yet. A Claude Code session walks in as soon as it does something.',
       working: 'Working', subagent: 'Intern at work', approval: 'Needs approval', waiting: 'Waiting for you', sleeping: 'Asleep', error: 'Error', arriving: 'Arriving', leaving: 'Leaving',
       allow: 'Approve', deny: 'Deny', pass: 'Answer in Claude', answerInClaude: 'Answer this one in Claude.', more: n => `+${n} more`,
-      open: 'Open Claude app', openHint: 'Opens the Claude desktop app with a new session in this folder', openFail: 'Could not open the Claude desktop app.',
       dismiss: 'Clear desk', needsYou: 'Needs your answer',
       connectNone: 'Not connected to Claude Code yet. Connecting adds hooks to your Claude Code settings file (the original is backed up first), and sessions show up here whenever they do something.',
       connectOutdated: 'The connection details have changed. Connect again to keep sessions showing up.',
       connectBtn: 'Connect to Claude Code', reconnectBtn: 'Connect again',
       connected: 'Connected to Claude Code', notConnected: 'Not connected', disconnect: 'Disconnect',
-      didConnect: 'Connected. Sessions appear as soon as they do something.', didDisconnect: 'Disconnected. The hooks were removed from your settings.',
+      connectWarn: 'Heads-up: connecting changes your Claude Code settings, and sessions with Remote Control turned on may drop that connection. If one does, run /remote-control in that session again, or turn it back on with the Remote Control icon at the top of the session.',
+      didConnect: 'Connected. Each session walks in the next time it does something. If a Remote Control session just disconnected, run /remote-control in it again, or use the Remote Control icon at the top of the session.',
+      didDisconnect: 'Disconnected, and the hooks were removed from your settings. If a Remote Control session just disconnected, run /remote-control in it again.',
+      ok: 'Got it',
       lost: 'Lost contact with the app. Close this window and start it again.'
     },
     ko: {
@@ -26,13 +28,15 @@
       empty: '아직 출근한 세션이 없어요. Claude Code 세션이 움직이면 문으로 걸어 들어와요.',
       working: '작업 중', subagent: '인턴 투입', approval: '승인 대기', waiting: '입력 대기', sleeping: '자는 중', error: '오류', arriving: '출근 중', leaving: '퇴근 중',
       allow: '승인', deny: '거절', pass: 'Claude에서 답하기', answerInClaude: '이 요청은 Claude에서 답해 주세요.', more: n => `외 ${n}건`,
-      open: 'Claude 앱 열기', openHint: 'Claude 데스크톱 앱에서 이 폴더로 새 세션을 엽니다', openFail: 'Claude 데스크톱 앱을 열지 못했어요.',
       dismiss: '자리 치우기', needsYou: '확인이 필요해요',
       connectNone: '아직 Claude Code와 연결되지 않았어요. 연결하면 Claude Code 설정 파일에 훅이 추가되고(원래 파일은 먼저 백업해요), 세션이 움직일 때마다 여기에 나타나요.',
       connectOutdated: '연결 정보가 바뀌었어요. 세션이 계속 보이려면 다시 연결해 주세요.',
       connectBtn: 'Claude Code에 연결', reconnectBtn: '다시 연결',
       connected: 'Claude Code 연결됨', notConnected: '연결 안 됨', disconnect: '연결 해제',
-      didConnect: '연결했어요. 세션이 움직이면 바로 나타나요.', didDisconnect: '연결을 해제했어요. 설정 파일에서 훅을 지웠어요.',
+      connectWarn: '미리 알려드려요. 연결하면 Claude Code 설정이 바뀌면서, 리모트 컨트롤을 켜 둔 세션의 원격 연결이 끊길 수 있어요. 끊기면 그 세션에서 /remote-control을 다시 실행하거나, 세션 위쪽의 리모트 컨트롤 아이콘을 눌러 다시 켜 주세요.',
+      didConnect: '연결했어요. 세션이 다음에 움직일 때 걸어 들어와요. 방금 원격 연결이 끊긴 세션이 있다면 그 세션에서 /remote-control을 다시 실행하거나, 세션 위쪽의 리모트 컨트롤 아이콘을 눌러 주세요.',
+      didDisconnect: '연결을 해제하고 설정 파일에서 훅을 지웠어요. 방금 원격 연결이 끊긴 세션이 있다면 그 세션에서 /remote-control을 다시 실행해 주세요.',
+      ok: '확인',
       lost: '앱과 연결이 끊겼어요. 창을 닫고 다시 실행해 주세요.'
     }
   };
@@ -48,9 +52,10 @@
   const stage = $('stage'), canvas = $('office'), listEl = $('list'), emptyEl = $('empty'), card = $('card');
   canvas.setAttribute('aria-label', T.canvas);
   emptyEl.textContent = T.empty;
-  $('card-open').textContent = T.open; $('card-open').title = T.openHint;
   $('card-dismiss').textContent = T.dismiss;
   $('disconnect').textContent = T.disconnect;
+  $('connect-warn').textContent = T.connectWarn;
+  $('notice-ok').textContent = T.ok;
 
   const office = window.PixelOffice(canvas);
   const KINDS = ['human', 'cat', 'dog', 'bear', 'rabbit'];
@@ -66,6 +71,9 @@
       return await res.json();
     } catch (e) { return { ok: false }; }
   }
+  // A message that stays until the person has read it.
+  function notice(text) { $('notice-text').textContent = text; $('notice').hidden = false; }
+  $('notice-ok').addEventListener('click', () => { $('notice').hidden = true; });
   function toast(text) {
     const el = $('toast');
     el.textContent = text; el.hidden = false;
@@ -132,15 +140,13 @@
     const li = document.createElement('li');
     li.className = 'row';
     li.innerHTML = '<span class="sw"></span><span class="nm"></span><span class="pill"><i></i><span class="pilltxt"></span></span><span class="ev"></span>'
-      + '<span class="acts"><button type="button" class="yes"></button><button type="button" class="no"></button><button type="button" class="open"></button><button type="button" class="x">×</button></span>';
+      + '<span class="acts"><button type="button" class="yes"></button><button type="button" class="no"></button><button type="button" class="x">×</button></span>';
     const r = sel => li.querySelector(sel);
     r('.sw').style.background = v.shirt;
     r('.yes').textContent = T.allow; r('.no').textContent = T.deny;
-    r('.open').textContent = T.open; r('.open').title = T.openHint;
     r('.x').setAttribute('aria-label', T.dismiss); r('.x').title = T.dismiss;
     r('.yes').addEventListener('click', () => decide(v, 'allow'));
     r('.no').addEventListener('click', () => decide(v, 'deny'));
-    r('.open').addEventListener('click', () => openInClaude(v));
     r('.x').addEventListener('click', () => post('/api/dismiss', { session: v.id }));
     listEl.appendChild(li); v.row = li;
   }
@@ -159,7 +165,6 @@
     v.row.querySelector('.ev').textContent = s.ev;
     const canDecide = Boolean(p && p.canDecide);
     v.row.querySelector('.yes').hidden = v.row.querySelector('.no').hidden = !canDecide;
-    v.row.querySelector('.open').hidden = !(snapshot && snapshot.canOpen && s.cwd);
 
     v.ask.hidden = !p;
     if (p) {
@@ -202,16 +207,11 @@
     const p = v.session.pending.find(x => x.canDecide);
     if (p) await post('/api/decide', { pending: p.id, decision });
   }
-  async function openInClaude(v) {
-    const res = await post('/api/open', { session: v.id });
-    if (!res.ok) toast(T.openFail);
-  }
   function closeCard() { cardFor = null; card.hidden = true; }
   function openCard(v) {
     cardFor = v;
     $('card-name').textContent = v.session.name;
     $('card-path').textContent = v.session.cwd;
-    $('card-open').hidden = !(snapshot.canOpen && v.session.cwd);
     const d = office.desks[v.desk];
     card.style.left = Math.min(78, Math.max(22, d.cx / office.W * 100)) + '%';
     card.style.top = ((d.T - 26) / office.H * 100) + '%';
@@ -229,7 +229,6 @@
   });
   canvas.addEventListener('mousemove', e => { canvas.style.cursor = visualAt(e) ? 'pointer' : 'default'; });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCard(); });
-  $('card-open').addEventListener('click', () => { if (cardFor) openInClaude(cardFor); closeCard(); });
   $('card-dismiss').addEventListener('click', () => { if (cardFor) post('/api/dismiss', { session: cardFor.id }); closeCard(); });
 
   $('skin').addEventListener('change', e => post('/api/settings', { skin: e.target.value }));
@@ -237,11 +236,11 @@
   $('ontop').addEventListener('change', e => post('/api/settings', { onTop: e.target.checked }));
   $('connect-btn').addEventListener('click', async () => {
     const res = await post('/api/hooks', { action: 'install' });
-    toast(res.ok ? T.didConnect : (res.message || T.lost));
+    if (res.ok) notice(T.didConnect); else toast(res.message || T.lost);
   });
   $('disconnect').addEventListener('click', async () => {
     const res = await post('/api/hooks', { action: 'uninstall' });
-    toast(res.ok ? T.didDisconnect : (res.message || T.lost));
+    if (res.ok) notice(T.didDisconnect); else toast(res.message || T.lost);
   });
 
   // ---------- applying a new state from the app ----------
@@ -250,7 +249,7 @@
     $('skin').value = next.settings.skin; office.setSkin(next.settings.skin);
     $('approvals').checked = next.settings.approvals;
     $('ontop').checked = next.settings.onTop;
-    $('ontop-wrap').hidden = !next.canOpen;   // only the desktop window can stay on top
+    $('ontop-wrap').hidden = !next.desktop;   // only the desktop window can stay on top
     $('version').textContent = 'v' + next.version;
 
     const hooks = next.hooks.state;
@@ -259,6 +258,7 @@
     $('connect-text').title = next.hooks.path;
     $('connect-btn').textContent = hooks === 'outdated' ? T.reconnectBtn : T.connectBtn;
     $('connect-btn').hidden = hooks === 'error';
+    $('connect-warn').hidden = hooks === 'error';
     $('hook-state').textContent = hooks === 'connected' ? T.connected : T.notConnected;
     $('hook-state').title = next.hooks.path;
     $('disconnect').hidden = hooks === 'none' || hooks === 'error';

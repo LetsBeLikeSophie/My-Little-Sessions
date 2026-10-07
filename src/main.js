@@ -21,8 +21,7 @@ if (!app.requestSingleInstanceLock()) {
       port: Number(process.env.MLS_PORT) || DEFAULT_PORT,
       configDir: app.getPath('userData'),
       version: app.getVersion(),
-      // Opens the Claude desktop app with a new Code session in that project folder.
-      onOpen: cwd => shell.openExternal('claude://code/new?folder=' + encodeURIComponent(cwd)),
+      desktop: true,
       onAttention: () => { if (win && !win.isFocused()) win.flashFrame(true); },
       onSettings: settings => { if (win) win.setAlwaysOnTop(Boolean(settings.onTop)); }
     });

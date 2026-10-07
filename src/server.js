@@ -62,7 +62,7 @@ function createServer(options = {}) {
     version: options.version || '0.0.0',
     hooks: { ...hooksConfig.status(settingsFile, boundPort, config.hookToken), path: settingsFile },
     settings: { skin: config.skin, approvals: config.approvals, onTop: config.onTop },
-    canOpen: typeof options.onOpen === 'function',
+    desktop: options.desktop === true,
     sessions: office.snapshot()
   });
 
@@ -164,12 +164,6 @@ function createServer(options = {}) {
         if (options.onSettings) options.onSettings({ ...config });
         broadcast();
         return json(res, 200, { ok: true });
-      case '/api/open': {
-        const s = office.snapshot().find(x => x.id === String(body.session));
-        if (!s || !s.cwd || !options.onOpen) return json(res, 200, { ok: false });
-        try { await options.onOpen(s.cwd); return json(res, 200, { ok: true }); }
-        catch (e) { return json(res, 200, { ok: false }); }
-      }
       default:
         return send(res, 404);
     }

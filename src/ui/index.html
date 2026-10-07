@@ -30,8 +30,16 @@
   </header>
 
   <section class="connect" id="connect" hidden>
-    <p id="connect-text"></p>
+    <div class="connect-body">
+      <p id="connect-text"></p>
+      <p class="warn" id="connect-warn"></p>
+    </div>
     <button type="button" id="connect-btn" class="solid"></button>
+  </section>
+
+  <section class="connect" id="notice" hidden>
+    <div class="connect-body"><p id="notice-text"></p></div>
+    <button type="button" id="notice-ok"></button>
   </section>
 
   <div class="stage" id="stage">
@@ -41,7 +49,6 @@
       <span class="card-name" id="card-name"></span>
       <span class="card-path" id="card-path"></span>
       <span class="card-btns">
-        <button type="button" id="card-open" class="solid"></button>
         <button type="button" id="card-dismiss"></button>
       </span>
     </div>

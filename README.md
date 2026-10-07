@@ -12,7 +12,7 @@ A tiny pixel-art office for your Claude Code sessions. Every session is a little
 ## Get started
 
 1. Download one of the files above and run it. The installer adds a Start menu entry; the portable exe runs without installing.
-2. Click **Connect to Claude Code** in the window.
+2. Click **Connect to Claude Code** in the window. Sessions that have Remote Control turned on may drop that connection at this moment; run `/remote-control` in the session again, or use the Remote Control icon at the top of the session, to turn it back on.
 3. Use Claude Code as you always do. Each session walks in through the door the next time it does something.
 
 Windows may show a "Windows protected your PC" notice because the app is not code-signed. Choose **More info → Run anyway**.
@@ -36,7 +36,7 @@ A few more things the office does on its own:
 - **Desks are added as you need them.** Three more appear whenever every desk is taken.
 - **The wall clock and the sky outside follow your real time**, so the office goes through day, sunset and night with you.
 - **Characters can be people, cats, dogs, bears, rabbits, or a mix.** A session keeps the same look for as long as it lives.
-- **Clicking a character** shows its project folder, with a button that opens the Claude desktop app on a new session in that folder.
+- **Clicking a character** shows which project folder it belongs to, with a button to clear its desk.
 
 ## Approving from the office
 

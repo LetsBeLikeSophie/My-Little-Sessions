@@ -145,10 +145,10 @@ test('connect and disconnect edit the Claude Code settings file', async t => {
   assert.deepEqual(JSON.parse(fs.readFileSync(srv.settingsFile, 'utf8')), {});
 });
 
-test('dismiss removes a session; open reports failure without a desktop shell', async t => {
+test('dismiss removes a session', async t => {
   const { srv, hook, api } = await boot(t);
   await hook({ hook_event_name: 'SessionStart' });
-  assert.deepEqual(await (await api('/api/open', { session: 's1' })).json(), { ok: false });
+  assert.equal((await api('/api/open', { session: 's1' })).status, 404);
   assert.deepEqual(await (await api('/api/dismiss', { session: 's1' })).json(), { ok: true });
   assert.equal(srv.office.snapshot().length, 0);
 });
