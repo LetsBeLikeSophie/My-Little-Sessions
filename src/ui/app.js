@@ -73,6 +73,7 @@
   const visuals = new Map();   // session id -> what is drawn and its DOM
   const desks = new Map();     // "team#n" -> one desk on screen, shared by the sessions of one project
   let snapshot = null, first = true, time = 0, rows = 2, cardFor = null, deskFor = null, toastTimer = 0, fillers = [];
+  let doorFree = 0;   // when the next character may go through the door, so a crowd walks in single file
 
   // ---------- talking to the app ----------
   async function post(path, body) {
@@ -242,7 +243,8 @@
       });
     }
     for (const f of fillers) list.push({ x: f.x, T: f.T, w: f.w, chairs: [f.x + PITCH / 2, f.x + PITCH * 1.5], seated: [], closed: [], decoAt: null });
-    return { desks: list, walkers: [...visuals.values()].filter(v => v.mode === 'in' || v.mode === 'out') };
+    // someone still waiting outside to come in is not drawn yet; their seat already has a closed laptop
+    return { desks: list, walkers: [...visuals.values()].filter(v => v.mode === 'out' || (v.mode === 'in' && time >= v.walkAt)) };
   }
 
   function startWalk(v, dir) {
@@ -257,6 +259,7 @@
       v.desk = null;
     }
     v.mode = dir; v.path = pts; v.px = pts[0].x; v.py = pts[0].y; v.pi = 1;
+    v.walkAt = Math.max(time, doorFree); doorFree = v.walkAt + 0.7;
     if (reduce) endWalk(v);
   }
   function endWalk(v) {
@@ -265,7 +268,7 @@
   }
   function step(dt) {
     for (const v of [...visuals.values()]) {
-      if (v.mode !== 'in' && v.mode !== 'out') continue;
+      if ((v.mode !== 'in' && v.mode !== 'out') || time < v.walkAt) continue;   // waiting for a turn at the door
       let left = 46 * dt;
       while (left > 0 && v.pi < v.path.length) {
         const p = v.path[v.pi], dx = p.x - v.px, dy = p.y - v.py, dist = Math.hypot(dx, dy);
