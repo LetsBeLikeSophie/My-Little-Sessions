@@ -205,7 +205,8 @@ test('Remote Control comes from Claude Code session files and beats the hook var
   assert.equal(remote(), false, 'turned off');
   // a file from a process that is gone is ignored; a file without the field leaves the hook in charge
   fs.rmSync(path.join(sessions, process.pid + '.json'));
-  write(2147483646, { sessionId: 's1', updatedAt: 9, bridgeSessionId: 'cse_old' });
+  const gone = require('child_process').spawnSync(process.execPath, ['-e', '']).pid;
+  write(gone, { sessionId: 's1', updatedAt: 9, bridgeSessionId: 'cse_old' });
   write(process.ppid, { sessionId: 'other', updatedAt: 1 });
   await srv.scanRemote();
   await hook({ hook_event_name: 'Stop' });

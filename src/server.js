@@ -55,7 +55,7 @@ function createServer(options = {}) {
   let timers = [];
   let queued = false;
   let saveTimer = null;
-  let scanning = false;
+  let scan = null, rescan = false;
   // Claude Code keeps one small file per running process here, including its Remote Control id.
   const claudeSessionsDir = options.claudeSessionsDir || path.join(path.dirname(settingsFile), 'sessions');
 
@@ -96,34 +96,36 @@ function createServer(options = {}) {
   office.on('change', broadcast);
   office.on('release', id => reply(id, ''));
 
-  const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+  const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code !== 'ESRCH'; } };
 
   // Which sessions have Remote Control connected, from Claude Code's per-process session files.
   // A file only says so once Remote Control was turned on or off in that process; until then the
   // session is left out and its hooks decide.
-  async function scanRemote() {
-    if (scanning) return;
-    scanning = true;
-    try {
-      const found = new Map();   // session id -> { remote, at }
-      let names = [];
-      try { names = await fs.promises.readdir(claudeSessionsDir); } catch (e) { /* no folder yet */ }
-      for (const name of names) {
-        if (!/^\d+\.json$/.test(name)) continue;
-        let rec;
-        try {
-          const file = path.join(claudeSessionsDir, name);
-          if ((await fs.promises.stat(file)).size > 256 * 1024) continue;
-          rec = JSON.parse(await fs.promises.readFile(file, 'utf8'));
-        } catch (e) { continue; }
-        if (!rec || typeof rec.sessionId !== 'string' || !('bridgeSessionId' in rec)) continue;
-        if (Number.isInteger(rec.pid) && !alive(rec.pid)) continue;
-        const at = Number(rec.updatedAt) || 0;
-        const prev = found.get(rec.sessionId);
-        if (!prev || at >= prev.at) found.set(rec.sessionId, { remote: typeof rec.bridgeSessionId === 'string' && rec.bridgeSessionId !== '', at });
-      }
-      office.setFileRemote(new Map([...found].map(([id, v]) => [id, v.remote])));
-    } finally { scanning = false; }
+  function scanRemote() {
+    if (scan) { rescan = true; return scan; }   // a change seen mid-scan gets another pass
+    scan = (async () => { do { rescan = false; await scanOnce(); } while (rescan); })().finally(() => { scan = null; });
+    return scan;
+  }
+
+  async function scanOnce() {
+    const found = new Map();   // session id -> { remote, at }
+    let names = [];
+    try { names = await fs.promises.readdir(claudeSessionsDir); } catch (e) { /* no folder yet */ }
+    for (const name of names) {
+      if (!/^\d+\.json$/.test(name)) continue;
+      let rec;
+      try {
+        const file = path.join(claudeSessionsDir, name);
+        if ((await fs.promises.stat(file)).size > 256 * 1024) continue;
+        rec = JSON.parse(await fs.promises.readFile(file, 'utf8'));
+      } catch (e) { continue; }
+      if (!rec || typeof rec.sessionId !== 'string' || !('bridgeSessionId' in rec)) continue;
+      if (Number.isInteger(rec.pid) && !alive(rec.pid)) continue;
+      const at = Number(rec.updatedAt) || 0;
+      const prev = found.get(rec.sessionId);
+      if (!prev || at >= prev.at) found.set(rec.sessionId, { remote: typeof rec.bridgeSessionId === 'string' && rec.bridgeSessionId !== '', at });
+    }
+    office.setFileRemote(new Map([...found].map(([id, v]) => [id, v.remote])));
   }
 
   function readBody(req) {
