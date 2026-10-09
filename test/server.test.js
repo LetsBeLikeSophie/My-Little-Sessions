@@ -187,3 +187,27 @@ test('the hook token and the sessions survive a restart', async t => {
   assert.notEqual(again.uiKey, srv.uiKey);
   assert.deepEqual(again.office.snapshot().map(s => [s.name, s.state]), [['blog-api', 'waiting']]);
 });
+
+test('Remote Control comes from Claude Code session files and beats the hook variable', async t => {
+  const { srv, dir, hook } = await boot(t);
+  const sessions = path.join(dir, 'claude', 'sessions');
+  fs.mkdirSync(sessions, { recursive: true });
+  const write = (pid, rec) => fs.writeFileSync(path.join(sessions, pid + '.json'), JSON.stringify({ pid, ...rec }));
+  const remote = () => srv.office.snapshot()[0].remote;
+  // a desktop-app session: the hook variable is never set, so the hook says "off"
+  await fetch(srv.hookUrl + '?rc=%25CLAUDE_CODE_BRIDGE_SESSION_ID%25', { method: 'POST', body: JSON.stringify({ session_id: 's1', cwd: '/p', hook_event_name: 'Stop' }) });
+  assert.equal(remote(), false);
+  write(process.pid, { sessionId: 's1', updatedAt: 1, bridgeSessionId: 'cse_abc' });
+  await srv.scanRemote();
+  assert.equal(remote(), true, 'the file says Remote Control is on');
+  write(process.pid, { sessionId: 's1', updatedAt: 2, bridgeSessionId: null });
+  await srv.scanRemote();
+  assert.equal(remote(), false, 'turned off');
+  // a file from a process that is gone is ignored; a file without the field leaves the hook in charge
+  fs.rmSync(path.join(sessions, process.pid + '.json'));
+  write(2147483646, { sessionId: 's1', updatedAt: 9, bridgeSessionId: 'cse_old' });
+  write(process.ppid, { sessionId: 'other', updatedAt: 1 });
+  await srv.scanRemote();
+  await hook({ hook_event_name: 'Stop' });
+  assert.equal(remote(), false, 'back to what the hook said');
+});

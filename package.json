@@ -1,6 +1,6 @@
 {
   "name": "my-little-sessions",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "A pixel-art office where every Claude Code session is a little employee. See what each one is doing and approve or deny permission requests from their desk.",
   "author": "Sophie (https://github.com/LetsBeLikeSophie)",
   "license": "MIT",
@@ -23,7 +23,7 @@
   "build": {
     "appId": "io.github.letsbelikesophie.my-little-sessions",
     "productName": "My Little Sessions",
-    "copyright": "Copyright \u00a9 2026 Sophie",
+    "copyright": "Copyright © 2026 Sophie",
     "directories": {
       "output": "dist"
     },

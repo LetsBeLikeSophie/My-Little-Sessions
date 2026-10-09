@@ -73,7 +73,7 @@ class Office extends EventEmitter {
 
     let s = this.sessions.get(id);
     if (!s) {
-      s = { id, name: '', title: '', cwd: '', base: 'waiting', ev: '', subagents: 0, pending: [], error: '', remote: null, startedAt: this.now(), lastAt: 0 };
+      s = { id, name: '', title: '', cwd: '', base: 'waiting', ev: '', subagents: 0, pending: [], error: '', remote: null, fileRemote: null, startedAt: this.now(), lastAt: 0 };
       this.sessions.set(id, s);
     }
     s.lastAt = this.now();
@@ -196,8 +196,22 @@ class Office extends EventEmitter {
     for (const r of Array.isArray(list) ? list : []) {
       if (!r || typeof r.id !== 'string' || !r.id || !(r.lastAt > cutoff) || this.sessions.has(r.id)) continue;
       const title = typeof r.title === 'string' ? r.title : '', cwd = typeof r.cwd === 'string' ? r.cwd : '';
-      this.sessions.set(r.id, { id: r.id, name: title || baseName(cwd), title, cwd, base: 'waiting', ev: typeof r.ev === 'string' ? r.ev : '', subagents: 0, pending: [], error: '', remote: null, startedAt: Number(r.startedAt) || r.lastAt, lastAt: r.lastAt });
+      this.sessions.set(r.id, { id: r.id, name: title || baseName(cwd), title, cwd, base: 'waiting', ev: typeof r.ev === 'string' ? r.ev : '', subagents: 0, pending: [], error: '', remote: null, fileRemote: null, startedAt: Number(r.startedAt) || r.lastAt, lastAt: r.lastAt });
     }
+  }
+
+  // Remote Control as Claude Code records it in its own session files (id -> true/false). This is
+  // the reliable source: the hook's environment variable is only set for terminal sessions, and the
+  // files change the moment Remote Control is turned on or off. Sessions missing from the map keep
+  // whatever their hooks last said.
+  setFileRemote(map) {
+    let changed = false;
+    for (const s of this.sessions.values()) {
+      const v = map.has(s.id) ? map.get(s.id) : null;
+      if (v !== s.fileRemote) { s.fileRemote = v; changed = true; }
+    }
+    if (changed) this.emit('change');
+    return changed;
   }
 
   // Posture says what the session is doing; the headset alone says whether Remote Control is on.
@@ -211,7 +225,7 @@ class Office extends EventEmitter {
       .sort((a, b) => a.startedAt - b.startedAt)
       .map(s => ({ ...s, project: projectRoot(s.cwd) }))
       .map(s => ({
-        id: s.id, name: s.name, cwd: s.cwd, ev: s.ev, error: s.error, remote: s.remote,
+        id: s.id, name: s.name, cwd: s.cwd, ev: s.ev, error: s.error, remote: s.fileRemote ?? s.remote,
         project: s.project, projectName: baseName(s.project), team: teamKey(s.project),
         state: s.pending.length ? 'approval' : s.error ? 'error' : s.subagents > 0 ? 'subagent'
           : this.asleep(s) ? 'sleeping' : s.base,

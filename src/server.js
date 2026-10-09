@@ -55,6 +55,9 @@ function createServer(options = {}) {
   let timers = [];
   let queued = false;
   let saveTimer = null;
+  let scanning = false;
+  // Claude Code keeps one small file per running process here, including its Remote Control id.
+  const claudeSessionsDir = options.claudeSessionsDir || path.join(path.dirname(settingsFile), 'sessions');
 
   const saveConfig = () => { fs.mkdirSync(configDir, { recursive: true }); fs.writeFileSync(configFile, JSON.stringify(config, null, 2) + '\n'); };
 
@@ -93,6 +96,36 @@ function createServer(options = {}) {
   office.on('change', broadcast);
   office.on('release', id => reply(id, ''));
 
+  const alive = pid => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+
+  // Which sessions have Remote Control connected, from Claude Code's per-process session files.
+  // A file only says so once Remote Control was turned on or off in that process; until then the
+  // session is left out and its hooks decide.
+  async function scanRemote() {
+    if (scanning) return;
+    scanning = true;
+    try {
+      const found = new Map();   // session id -> { remote, at }
+      let names = [];
+      try { names = await fs.promises.readdir(claudeSessionsDir); } catch (e) { /* no folder yet */ }
+      for (const name of names) {
+        if (!/^\d+\.json$/.test(name)) continue;
+        let rec;
+        try {
+          const file = path.join(claudeSessionsDir, name);
+          if ((await fs.promises.stat(file)).size > 256 * 1024) continue;
+          rec = JSON.parse(await fs.promises.readFile(file, 'utf8'));
+        } catch (e) { continue; }
+        if (!rec || typeof rec.sessionId !== 'string' || !('bridgeSessionId' in rec)) continue;
+        if (Number.isInteger(rec.pid) && !alive(rec.pid)) continue;
+        const at = Number(rec.updatedAt) || 0;
+        const prev = found.get(rec.sessionId);
+        if (!prev || at >= prev.at) found.set(rec.sessionId, { remote: typeof rec.bridgeSessionId === 'string' && rec.bridgeSessionId !== '', at });
+      }
+      office.setFileRemote(new Map([...found].map(([id, v]) => [id, v.remote])));
+    } finally { scanning = false; }
+  }
+
   function readBody(req) {
     return new Promise((resolve, reject) => {
       const chunks = []; let size = 0;
@@ -112,7 +145,9 @@ function createServer(options = {}) {
     // "rc" is the Remote Control id when connected; empty or an unexpanded %NAME% means it is off.
     const rc = url.searchParams.get('rc');
     const remote = rc === null ? undefined : rc !== '' && !rc.includes('%');
+    const known = office.sessions.has(evt && evt.session_id);
     const pending = office.handle(evt, { canDecide: config.approvals, remote });
+    if (!known) scanRemote().catch(() => {});   // a newcomer should arrive with its headset already right
     // Anything written back is read by Claude Code, so stay silent unless this is a decision.
     if (!pending || !pending.canDecide) return send(res, 200);
     const timer = setTimeout(() => { if (reply(pending.id, '')) office.settle(pending.id, null); }, HOLD_MS);
@@ -217,8 +252,10 @@ function createServer(options = {}) {
         boundPort = server.address().port;
         timers = [
           setInterval(() => { for (const res of streams) res.write(': keep-alive\n\n'); }, 25000),
-          setInterval(() => { office.sweep(); broadcast(); }, 60000)   // also notices outside edits to settings.json
+          setInterval(() => { office.sweep(); broadcast(); }, 60000),   // also notices outside edits to settings.json
+          setInterval(() => { scanRemote().catch(() => {}); }, 2000)
         ];
+        scanRemote().catch(() => {});
         timers.forEach(t => t.unref());
         resolve(api);
       });
@@ -236,7 +273,7 @@ function createServer(options = {}) {
   }
 
   const api = {
-    start, stop, office, uiKey,
+    start, stop, office, uiKey, scanRemote,
     get port() { return boundPort; },
     get url() { return `http://127.0.0.1:${boundPort}`; },
     get hookUrl() { return hooksConfig.hookUrl(boundPort, config.hookToken); },

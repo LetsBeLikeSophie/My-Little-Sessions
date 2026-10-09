@@ -42,7 +42,7 @@ A few more things the office does on its own:
 - **Characters can be people, cats, dogs, bears, rabbits, or a mix.** A session keeps the same look for as long as it lives.
 - **Click a character** to see its name and what it is doing, with two small icons: a headset that shows whether Remote Control is on, and a door that clears its desk. A crossed-out headset is a button that copies `/remote-control`, ready to paste into that session.
 - **Posture and headset mean different things.** What a character is doing shows the session's activity; the headset alone shows whether its Remote Control is on, whatever it is doing.
-- **The headset follows the session's last activity.** If Remote Control drops while a session sits idle, the headset comes off the next time that session does something.
+- **The headset follows Remote Control within a couple of seconds**, in the terminal and in the Claude desktop app alike. The app reads it from the small per-session files Claude Code keeps next to your settings.
 
 ## Approving from the office
 
