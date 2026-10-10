@@ -56,6 +56,8 @@ function createServer(options = {}) {
   let queued = false;
   let saveTimer = null;
   let scan = null, rescan = false;
+  let watcher = null, watchTimer = null;
+  const seen = new Map();   // file name -> { mtimeMs, size, rec }: unchanged files are not read again
   // Claude Code keeps one small file per running process here, including its Remote Control id.
   const claudeSessionsDir = options.claudeSessionsDir || path.join(path.dirname(settingsFile), 'sessions');
 
@@ -110,15 +112,20 @@ function createServer(options = {}) {
   async function scanOnce() {
     const found = new Map();   // session id -> { remote, at }
     let names = [];
-    try { names = await fs.promises.readdir(claudeSessionsDir); } catch (e) { /* no folder yet */ }
+    try { names = (await fs.promises.readdir(claudeSessionsDir)).filter(n => /^\d+\.json$/.test(n)); } catch (e) { /* no folder yet */ }
+    for (const name of [...seen.keys()]) if (!names.includes(name)) seen.delete(name);
     for (const name of names) {
-      if (!/^\d+\.json$/.test(name)) continue;
+      const file = path.join(claudeSessionsDir, name);
       let rec;
       try {
-        const file = path.join(claudeSessionsDir, name);
-        if ((await fs.promises.stat(file)).size > 256 * 1024) continue;
-        rec = JSON.parse(await fs.promises.readFile(file, 'utf8'));
-      } catch (e) { continue; }
+        const st = await fs.promises.stat(file);
+        const memo = seen.get(name);
+        if (memo && memo.mtimeMs === st.mtimeMs && memo.size === st.size) rec = memo.rec;
+        else {
+          rec = st.size > 256 * 1024 ? null : JSON.parse(await fs.promises.readFile(file, 'utf8'));
+          seen.set(name, { mtimeMs: st.mtimeMs, size: st.size, rec });
+        }
+      } catch (e) { continue; }   // removed or half-written; the next change brings it back
       if (!rec || typeof rec.sessionId !== 'string' || !('bridgeSessionId' in rec)) continue;
       if (Number.isInteger(rec.pid) && !alive(rec.pid)) continue;
       const at = Number(rec.updatedAt) || 0;
@@ -126,6 +133,19 @@ function createServer(options = {}) {
       if (!prev || at >= prev.at) found.set(rec.sessionId, { remote: typeof rec.bridgeSessionId === 'string' && rec.bridgeSessionId !== '', at });
     }
     office.setFileRemote(new Map([...found].map(([id, v]) => [id, v.remote])));
+  }
+
+  // React to changes in Claude Code's session folder instead of polling it; a slow timer covers
+  // the folder appearing later and any change the watcher misses.
+  function watchSessions() {
+    if (watcher) return;
+    try {
+      watcher = fs.watch(claudeSessionsDir, () => {
+        clearTimeout(watchTimer);
+        watchTimer = setTimeout(() => scanRemote().catch(() => {}), 150);
+      });
+      watcher.on('error', () => { try { watcher.close(); } catch (e) { /* already closed */ } watcher = null; });
+    } catch (e) { watcher = null; }
   }
 
   function readBody(req) {
@@ -255,8 +275,9 @@ function createServer(options = {}) {
         timers = [
           setInterval(() => { for (const res of streams) res.write(': keep-alive\n\n'); }, 25000),
           setInterval(() => { office.sweep(); broadcast(); }, 60000),   // also notices outside edits to settings.json
-          setInterval(() => { scanRemote().catch(() => {}); }, 2000)
+          setInterval(() => { watchSessions(); scanRemote().catch(() => {}); }, 15000)
         ];
+        watchSessions();
         scanRemote().catch(() => {});
         timers.forEach(t => t.unref());
         resolve(api);
@@ -266,6 +287,8 @@ function createServer(options = {}) {
 
   function stop() {
     timers.forEach(clearInterval);
+    clearTimeout(watchTimer);
+    if (watcher) { watcher.close(); watcher = null; }
     clearTimeout(saveTimer);
     if (config) saveSessions();
     for (const id of [...held.keys()]) reply(id, '');

@@ -166,13 +166,13 @@ window.PixelOffice = function (canvas) {
     const hy = headTop(s, T, t), by = T - 9;
     const blink = st === 'sleeping' || ((t + s.seed * 1.7) % 3.4) < 0.12;
     if (k === 'cat') { const sw = Math.round(Math.sin(t * 2 + s.seed)); R(cx - 11, T - 6, 2, 6, c.fur); R(cx - 12 - sw, T - 10, 2, 5, c.fur); R(cx - 13 - sw, T - 12, 2, 3, c.dark); }
-    if (k === 'dog') { const wag = (st === 'approval' || st === 'waiting') ? Math.round(Math.sin(t * 10)) : 0; R(cx - 10, T - 5, 2, 5, c.fur); R(cx - 12 + wag, T - 8, 3, 4, c.fur); }
+    if (k === 'dog') { const wag = (st === 'approval' || st === 'waiting') ? Math.round(Math.sin(t * 6)) : 0; R(cx - 10, T - 5, 2, 5, c.fur); R(cx - 12 + wag, T - 8, 3, 4, c.fur); }
     R(cx - 5, by, 10, 10, s.shirt); R(cx - 3, by, 6, 1, 'rgba(0,0,0,.2)');
     R(cx - 8, by + 2, 3, 8, s.shirt);
     if (st !== 'approval') R(cx + 5, by + 2, 3, 8, s.shirt);
     head(k, c, cx, hy, { blink, down: typing || st === 'error', tongue: st === 'waiting', headset: s.remote === true });
     if (st === 'approval') {
-      const wv = Math.round(Math.sin(t * 9));
+      const wv = Math.round(Math.sin(t * 6));
       R(cx + 5, by + 1, 4, 3, s.shirt); R(cx + 7, hy + 1, 3, by + 3 - (hy + 1), s.shirt); R(cx + 7 + wv, hy - 3, 3, 4, hc);
     }
     if (st === 'subagent') {   // the chick intern rides on the head while a subagent runs
@@ -205,7 +205,7 @@ window.PixelOffice = function (canvas) {
     const on = st !== 'waiting';
     R(cx - 5, T - 6, 10, 9, LID); R(cx - 4, T - 5, 8, 7, LID2); R(cx - 1, T - 3, 2, 2, st === 'error' ? '#E03131' : on ? '#BFE9FF' : LIDSH); R(cx - 6, T + 3, 12, 1, LIDSH);
     if (st === 'working' || st === 'subagent') {
-      const f = Math.floor(t * 9 + s.seed) % 2;
+      const f = Math.floor(t * 6 + s.seed) % 2;   // 6 taps a second: even at the 12 fps idle frame rate
       R(cx - 9, T + 1 - (f ? 1 : 0), 3, 2, hc); R(cx + 6, T + 1 - (f ? 0 : 1), 3, 2, hc);
     } else {
       R(cx - 9, T + 1, 3, 2, hc);

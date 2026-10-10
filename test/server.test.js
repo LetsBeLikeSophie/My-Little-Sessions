@@ -212,3 +212,16 @@ test('Remote Control comes from Claude Code session files and beats the hook var
   await hook({ hook_event_name: 'Stop' });
   assert.equal(remote(), false, 'back to what the hook said');
 });
+
+test('a change in the session folder is picked up without waiting for the slow timer', async t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mls-srv-'));
+  const sessions = path.join(dir, 'claude', 'sessions');
+  fs.mkdirSync(sessions, { recursive: true });
+  const srv = createServer({ port: 0, configDir: dir, settingsFile: path.join(dir, 'claude', 'settings.json') });
+  await srv.start();
+  t.after(() => srv.stop());
+  await fetch(srv.hookUrl, { method: 'POST', body: JSON.stringify({ session_id: 'w1', cwd: '/p', hook_event_name: 'Stop' }) });
+  await sleep(50);
+  fs.writeFileSync(path.join(sessions, process.pid + '.json'), JSON.stringify({ pid: process.pid, sessionId: 'w1', updatedAt: 1, bridgeSessionId: 'cse_w' }));
+  await until(() => srv.office.snapshot()[0].remote === true, 'the watcher to notice Remote Control');
+});

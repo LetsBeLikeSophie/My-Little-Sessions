@@ -218,16 +218,18 @@
       v.cx = v.desk.cur.x + v.desk.cur.pad + PITCH / 2 + v.si * PITCH; v.T = v.desk.cur.T;
     }
   }
+  // Writes a style only when it changed, so an idle office causes no layout work at all.
+  const setStyle = (el, prop, value) => { const memo = el._mls || (el._mls = {}); if (memo[prop] !== value) { memo[prop] = value; el.style[prop] = value; } };
   function place() {
-    const W = office.W, H = office.H, pct = n => n * 100 + '%';
+    const W = office.W, H = office.H, pct = n => (n * 100).toFixed(2) + '%';
     for (const d of desks.values()) {
       const c = d.cur;
-      d.tag.style.left = pct((c.x + c.w / 2) / W); d.tag.style.top = pct((c.T + 16.5) / H);
-      d.tag.style.maxWidth = pct(Math.max(0, c.w - 20) / W);
+      setStyle(d.tag, 'left', pct((c.x + c.w / 2) / W)); setStyle(d.tag, 'top', pct((c.T + 16.5) / H));
+      setStyle(d.tag, 'maxWidth', pct(Math.max(0, c.w - 20) / W));
     }
     for (const v of visuals.values()) {
       if (v.ask.hidden || !v.desk) continue;
-      v.ask.style.left = pct(Math.min(0.84, Math.max(0.16, v.cx / W))); v.ask.style.top = pct((v.T - 26) / H);
+      setStyle(v.ask, 'left', pct(Math.min(0.84, Math.max(0.16, v.cx / W)))); setStyle(v.ask, 'top', pct((v.T - 26) / H));
     }
   }
   function scene() {
@@ -512,12 +514,20 @@
   if (reduce) {
     setInterval(() => { time += 0.6; animate(1); place(); office.draw(scene(), time); }, 600);
   } else {
+    // Pixel art does not need 60 fps. Walking and sliding desks get 30; everything else (typing,
+    // coffee, zzz) is drawn 12 times a second, which keeps the app light while it sits in a corner.
+    const busy = () => {
+      for (const v of visuals.values()) if (v.mode === 'in' || v.mode === 'out' || (v.desk && v.si !== v.slot)) return true;
+      for (const d of desks.values()) if (d.cur.x !== d.tgt.x || d.cur.T !== d.tgt.T || d.cur.w !== d.tgt.w || d.cur.pad !== d.tgt.pad) return true;
+      return false;
+    };
     let last = performance.now();
     const frame = now => {
       const dt = Math.min(0.1, (now - last) / 1000); last = now; time += dt;
       step(dt); animate(dt); place();
       office.draw(scene(), time);
-      requestAnimationFrame(frame);
+      const wait = 1000 / (busy() ? 30 : 12) - (performance.now() - now);
+      setTimeout(() => requestAnimationFrame(frame), Math.max(0, wait));
     };
     requestAnimationFrame(frame);
   }

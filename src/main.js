@@ -44,7 +44,7 @@ if (!app.requestSingleInstanceLock()) {
       autoHideMenuBar: true,
       alwaysOnTop: server.config.onTop,
       icon: path.join(__dirname, '..', 'assets', 'icon.png'),
-      webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
+      webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false }
     });
     Menu.setApplicationMenu(null);
     win.on('focus', () => win.flashFrame(false));
